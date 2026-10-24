@@ -10,6 +10,8 @@
   const $ = s => document.querySelector(s);
 
   const EVENT = D.event;
+  // 讲稿开关由构建脚本控制（STRIP_TALK）：关闭时不显示演讲者视图入口
+  const HAS_PRESENTER = !(D.config && D.config.presenter === false);
 
   /* ---------------- 渲染 ---------------- */
   function esc(s) { return s; } // 内容来自可信的备课数据，本身已是 HTML
@@ -181,6 +183,138 @@
     });
   }
 
+  /* ---------------- 框图增强（渲染后处理） ---------------- */
+  /* (1) 图内文字自适应放大
+         并排显示时每张图只有约 300px 宽，却要装下 760 单位宽的画布，
+         17/13 号字实际只有 5–7px。这里在 SVG user unit 上整体放大，
+         上限 1.5 倍，并受两条硬约束：放大后不超出所在方框、同一框内
+         相邻两行的基线间距仍放得下放大后的字号。 */
+  const FS_MAX = 1.5;
+  const overlapX = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width;
+  function fitDiagramText(root) {
+    root.querySelectorAll('svg.logic').forEach(svg => {
+      if (svg.dataset.fsfit) return;
+      const rects = [...svg.querySelectorAll('rect')].map(r => ({
+        x: +(r.getAttribute('x') || 0), y: +(r.getAttribute('y') || 0),
+        w: +(r.getAttribute('width') || 0), h: +(r.getAttribute('height') || 0),
+      })).filter(r => r.w > 60 && r.h > 24);
+      const boxOf = b => {
+        const cx = b.x + b.width / 2, cy = b.y + b.height / 2;
+        return rects.filter(r => cx >= r.x && cx <= r.x + r.w && cy >= r.y && cy <= r.y + r.h)
+          .sort((p, q) => p.w * p.h - q.w * q.h)[0];
+      };
+      const items = [];
+      let k = FS_MAX;
+      svg.querySelectorAll('text').forEach(t => {
+        const fs = parseFloat(t.getAttribute('font-size'));
+        if (!fs) return;
+        let b = null;
+        try { b = t.getBBox(); } catch (_) { return; }
+        if (!b || !b.width) return;
+        const box = boxOf(b);
+        if (!box) return;
+        items.push({ t, fs, box, b });
+        k = Math.min(k, (box.w - 18) / b.width);          // 横向：不超出方框
+      });
+      // 纵向：同一框内上下相邻、且左右有交集的两行，间距要容纳放大后的字号
+      const byBox = new Map();
+      items.forEach(it => {
+        const key = it.box.x + ',' + it.box.y;
+        if (!byBox.has(key)) byBox.set(key, []);
+        byBox.get(key).push(it);
+      });
+      byBox.forEach(list => {
+        list.sort((a, b) => a.b.y - b.b.y);
+        for (let i = 1; i < list.length; i++) {
+          const a = list[i - 1], b = list[i];
+          if (!overlapX(a.b, b.b)) continue;              // 左右不搭界，属于不同卡片/列
+          const d = (b.b.y + b.b.height) - (a.b.y + a.b.height);
+          if (d <= 0) continue;
+          k = Math.min(k, d / (0.58 * (a.fs + b.fs)));
+        }
+      });
+      // 复核：放大后不得横向超出框、不得与上下相邻行重叠；有问题就退一档重来
+      const apply = kk => items.forEach(it => it.t.setAttribute('font-size', (it.fs * kk).toFixed(2)));
+      function bad() {
+        const groups = new Map();
+        let hit = false;
+        items.forEach(it => {
+          let b = null;
+          try { b = it.t.getBBox(); } catch (_) { return; }
+          if (!b || !b.width) return;
+          const box = boxOf(b);
+          if (!box) return;
+          if (b.x < box.x + 2 || b.x + b.width > box.x + box.w - 2) hit = true;
+          const key = box.x + ',' + box.y;
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push(b);
+        });
+        groups.forEach(gs => {
+          gs.sort((a, b) => a.y - b.y);
+          for (let i = 1; i < gs.length; i++) {
+            const a = gs[i - 1], b = gs[i];
+            if (!overlapX(a, b)) continue;
+            if (b.y < a.y + a.height - 1) hit = true;
+          }
+        });
+        return hit;
+      }
+      k = Math.max(1, Math.min(FS_MAX, k));   // 受约束时宁可不放大，也不许溢出
+      apply(k);
+      for (let guard = 0; guard < 10 && k > 1.01 && bad(); guard++) {
+        k = Math.max(1, k - 0.06);
+        apply(k);
+      }
+      svg.dataset.fsfit = '1';
+    });
+  }
+
+  /* (2) 多图页改图集：一次只显示一张、占满右侧区域，顶部标签切换。
+         单图占满后画布宽度从 ~300px 提升到 ~660px，配合上面的字号放大，
+         图内文字显示约 19–22px。 */
+  function galleryLabel(f, i) {
+    const svg = f.querySelector('svg');
+    const raw = (svg && (svg.getAttribute('aria-label') || (svg.querySelector('title') || {}).textContent))
+      || (f.querySelector('figcaption') || {}).textContent || '';
+    let s = String(raw).trim().replace(/\s+/g, ' ');
+    if (s.includes('｜')) {
+      const [a, b] = s.split('｜');
+      const head = (b || '').split(/[：:]/)[0].trim();
+      s = head ? a.trim() + ' · ' + head : a.trim();
+    } else {
+      s = s.split(/[：:]/)[0].trim();
+    }
+    if (!s) s = '图 ' + (i + 1);
+    if (s.length > 18) s = s.includes(' · ') ? s.split(' · ')[0] : s.slice(0, 17) + '…';
+    return s;
+  }
+
+  function buildGalleries(root) {
+    root.querySelectorAll('.s-visual').forEach(vis => {
+      const figs = [...vis.querySelectorAll('figure.diagram')].filter(f => f.querySelector('svg'));
+      if (figs.length < 2 || vis.dataset.gallery) return;
+      vis.dataset.gallery = '1';
+      vis.classList.add('gallery');
+      const tabs = document.createElement('div');
+      tabs.className = 'gal-tabs';
+      figs.forEach((f, i) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'gal-tab';
+        b.textContent = galleryLabel(f, i);
+        b.addEventListener('click', () => select(i));
+        tabs.appendChild(b);
+      });
+      vis.insertBefore(tabs, vis.firstChild);
+      function select(i) {
+        figs.forEach((f, j) => f.classList.toggle('is-hidden', j !== i));
+        [...tabs.children].forEach((b, j) => b.classList.toggle('on', j === i));
+        vis.dataset.galIdx = i;
+      }
+      select(0);
+    });
+  }
+
   function closingSlide(s) {
     const links = s.variant === 'thanks' ? `<div class="repo-links">
         <a href="https://github.com/OpenTenBase/OpenTenBase" target="_blank" rel="noopener">OpenTenBase · GitHub</a>
@@ -265,6 +399,10 @@
     stage.appendChild(el);
     slideEls.push(el);
   });
+
+  // 框图增强：先放大图内文字（此时各图都在渲染树里，可测量 bbox），再把多图页改成图集
+  fitDiagramText(stage);
+  buildGalleries(stage);
 
   // 图片放大镜（第 9 页生态图）：指针移到图上局部放大
   if (window.Loupe) window.Loupe.mount(stage);
@@ -436,6 +574,14 @@
   /* ---------------- 演讲者视图 ---------------- */
   let presenterOpen = false, timerSec = 0, timerOn = false, timerInt = null;
   const pBody = $('#presenter');
+  // 讲稿已移除时（tools/build_slides_data.py 的 STRIP_TALK）：隐藏入口与快捷键
+  if (!HAS_PRESENTER) {
+    const pb = $('#hud .pres');
+    if (pb) pb.style.display = 'none';
+    const hrow = [...document.querySelectorAll('#help tr')]
+      .find(tr => /演讲者视图/.test(tr.textContent || ''));
+    if (hrow) hrow.remove();
+  }
   function renderPresenter() {
     const s = D.slides[idx] || { title: '附录备查' };
     $('#presenter header h2').textContent = (s.title || '').replace(/<[^>]+>/g, '') || '（无标题）';
@@ -523,7 +669,7 @@
       case 'Home': show(0, true); break;
       case 'End': show(slideEls.length - 1, true); break;
       case 'f': case 'F': document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); break;
-      case 'n': case 'N': togglePresenter(); break;
+      case 'n': case 'N': if (HAS_PRESENTER) togglePresenter(); break;
       case 'o': case 'O': ov.classList.toggle('open'); updateOverview(); break;
       case 'b': case 'B': document.body.classList.toggle('blank'); break;
       case 'h': case 'H': case '?': help.classList.toggle('open'); break;

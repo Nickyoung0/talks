@@ -1215,3 +1215,41 @@ body.portrait-phone.force-portrait #rotate-hint { display: none; }
 @media (hover: none) and (pointer: coarse) {
   html { touch-action: manipulation; }
 }
+
+/* ============================================================
+   多图页 · 图集模式
+   并排时每张图只有约 300px 宽，却要装 760 单位宽的画布，图内文字
+   实际只有 5–7px。改为一次显示一张、占满右侧（约 660px），配合
+   deck.js 里按方框约束的字号放大，显示字号约 19–22px。
+   ============================================================ */
+.s-visual.gallery { flex-direction: column; flex-wrap: nowrap; gap: 10px; }
+.gal-tabs {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  flex: 0 0 auto; position: relative; z-index: 2;
+}
+.gal-tab {
+  font: inherit; font-size: 14px; line-height: 1; padding: 7px 15px; border-radius: 999px;
+  border: 1px solid rgba(1, 92, 183, .18); background: rgba(255, 255, 255, .92);
+  color: #49617a; cursor: pointer;
+  transition: color .25s var(--ease), background .25s var(--ease),
+              border-color .25s var(--ease), transform .25s var(--ease), box-shadow .25s var(--ease);
+}
+.gal-tab:hover {
+  color: #015cb7; border-color: rgba(1, 92, 183, .42);
+  transform: translateY(-1px); box-shadow: 0 8px 18px -12px rgba(1, 92, 183, .8);
+}
+.gal-tab.on {
+  background: linear-gradient(120deg, #015cb7, #35c6ff); color: #fff;
+  border-color: transparent; box-shadow: 0 10px 22px -12px rgba(1, 92, 183, .9);
+}
+/* 覆盖「多图并排」的 50% 宽与 168px 高限制：图集里单张占满 */
+.slide .s-visual.gallery figure.diagram {
+  max-width: 100%; width: 100%; flex: 1 1 auto; min-height: 0; padding: 12px 16px;
+}
+.slide .s-visual.gallery figure.diagram svg.logic { max-height: 100%; }
+.slide .s-visual.gallery figure.diagram figcaption { font-size: 13px; padding: 5px 14px; }
+.s-visual.gallery figure.diagram.is-hidden { display: none; }
+/* 触摸设备：标签按钮加大，方便现场点选 */
+@media (hover: none) and (pointer: coarse) {
+  .gal-tab { font-size: 15px; padding: 9px 16px; }
+}

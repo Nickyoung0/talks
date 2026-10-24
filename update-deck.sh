@@ -20,7 +20,7 @@ echo "→ 同步产物：$SRC → $DST"
 rsync -a --delete --exclude tools --exclude .workbuddy "$SRC/" "$DST/"
 
 echo "→ 递增资源版本号为 ?v=$V"
-sed -i '' -E "s/\?v=[0-9A-Za-z]+/?v=$V/g" "$DST/index.html"
+LC_ALL=C sed -i.bak -E "s/\?v=[0-9A-Za-z]+/?v=$V/g" "$DST/index.html" && rm -f "$DST/index.html.bak"
 
 cd "$REPO"
 if git diff --quiet && git diff --cached --quiet; then

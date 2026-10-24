@@ -6,14 +6,15 @@
 <title>从扩展机制看 PostgreSQL 的设计哲学｜OpenTenBase 城市行 · 西安站</title>
 <meta name="description" content="OpenTenBase 城市行西安站（2026.11.07 西安邮电大学）主题分享：从扩展机制看 PostgreSQL 的设计哲学。动态网页演示，支持翻页、分步揭示、演讲者视图与 PDF 导出。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23015CB7' d='M4 6h10v10H4z'/%3E%3Cpath fill='%2335C6FF' d='M18 6h10v10H18z'/%3E%3Cpath fill='%23003C83' d='M4 18h10v10H4z'/%3E%3Cpath fill='%237A5CFF' d='M18 18h10v10H18z'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/deck.css">
-<link rel="stylesheet" href="assets/css/machine.css">
-<link rel="stylesheet" href="assets/css/elephant.css">
-<link rel="stylesheet" href="assets/css/blocks.css">
+<!-- 版本号 v= 用于破除浏览器/CDN 缓存：每次更新内容后把 ?v= 递增即可，手机上刷新就是最新版 -->
+<link rel="stylesheet" href="assets/css/deck.css?v=20261024">
+<link rel="stylesheet" href="assets/css/machine.css?v=20261024">
+<link rel="stylesheet" href="assets/css/elephant.css?v=20261024">
+<link rel="stylesheet" href="assets/css/blocks.css?v=20261024">
 </head>
 <body>
 <div id="timebar" aria-hidden="true"></div>
-<div id="stage-wrap"><div id="stage"></div></div>
+<div id="stage-wrap"><div id="stage-size"><div id="stage"></div></div></div>
 
 <div id="hud" role="toolbar" aria-label="演示控制">
   <span class="hint">·</span>
@@ -22,6 +23,9 @@
   <button class="next" title="下一步">›</button>
   <button class="ov" title="总览 (O)">总览</button>
   <button class="pres" title="演讲者视图 (N)">讲稿</button>
+  <button class="vfit" title="切换：整页 / 铺满宽度">整页</button>
+  <button class="zout" title="缩小">－</button>
+  <button class="zin" title="放大">＋</button>
   <button class="fs" title="全屏 (F)">全屏</button>
 </div>
 
@@ -50,6 +54,20 @@
   <div class="vm-stage"></div>
 </div>
 
+<div id="rotate-hint" aria-hidden="true">
+  <div>
+    <div class="rh-icon">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#7fd3ff" stroke-width="3" stroke-linecap="round">
+        <rect x="14" y="6" width="20" height="36" rx="4"></rect>
+        <path d="M40 14c3 3 3 17 0 20" stroke-dasharray="3 5"></path>
+      </svg>
+    </div>
+    <h2>建议横屏浏览</h2>
+    <p>本页为 16:9 演示画布，竖屏下文字会非常小。<br>旋转手机后体验最佳。</p>
+    <button class="rh-skip" type="button">仍要竖屏查看</button>
+  </div>
+</div>
+
 <div id="help">
   <div class="help-card">
     <h2>操作方式</h2>
@@ -66,13 +84,13 @@
   </div>
 </div>
 
-<script src="assets/js/slides-data.js"></script>
-<script src="assets/js/machine.js"></script>
-<script src="assets/js/elephant.js"></script>
-<script src="assets/js/loupe.js"></script>
-<script src="assets/js/blocks.js"></script>
-<script src="assets/js/land-data.js"></script>
-<script src="assets/js/globe.js"></script>
-<script src="assets/js/deck.js"></script>
+<script src="assets/js/slides-data.js?v=20261024"></script>
+<script src="assets/js/machine.js?v=20261024"></script>
+<script src="assets/js/elephant.js?v=20261024"></script>
+<script src="assets/js/loupe.js?v=20261024"></script>
+<script src="assets/js/blocks.js?v=20261024"></script>
+<script src="assets/js/land-data.js?v=20261024"></script>
+<script src="assets/js/globe.js?v=20261024"></script>
+<script src="assets/js/deck.js?v=20261024"></script>
 </body>
 </html>

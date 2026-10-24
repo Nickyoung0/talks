@@ -270,11 +270,96 @@
   if (window.Loupe) window.Loupe.mount(stage);
 
   /* ---------------- 缩放 ---------------- */
-  function fit() {
-    const s = Math.min(innerWidth / W, innerHeight / H) * 0.985;
-    document.documentElement.style.setProperty('--s', s);
+  /* 触摸设备额外提供：整页 / 铺满宽度 两种视图，以及双指与按钮缩放。
+     桌面与投影场景行为与之前完全一致（整页等比缩放 0.985）。 */
+  const COARSE = matchMedia('(hover: none) and (pointer: coarse)').matches;
+  const wrapEl = document.getElementById('stage-wrap');
+  let vmode = 'fit';          // 'fit' 整页等比 | 'fill' 铺满宽度（纵向可滚动）
+  let zoom = 1;               // 额外倍率
+  let curS = 1;
+
+  function vvSize() {
+    const vv = window.visualViewport;     // iPhone 上避开 Safari 工具栏遮挡
+    return { w: vv ? vv.width : innerWidth, h: vv ? vv.height : innerHeight };
   }
-  addEventListener('resize', fit); fit();
+  function baseScale() {
+    const { w, h } = vvSize();
+    if (vmode === 'fill') return w / W;   // 16:9 画布按宽度铺满，纵向滚动查看
+    return Math.min(w / W, h / H) * 0.985;
+  }
+  function applyScale(anchor) {
+    const prev = curS;
+    curS = baseScale() * zoom;
+    document.documentElement.style.setProperty('--s', curS);
+    // 以手指/屏幕中心为锚点，缩放后保持同一内容点位置
+    if (anchor && prev && wrapEl) {
+      const r = wrapEl.getBoundingClientRect();
+      const relX = anchor.x - r.left, relY = anchor.y - r.top;
+      const cx = (wrapEl.scrollLeft + relX) / prev, cy = (wrapEl.scrollTop + relY) / prev;
+      wrapEl.scrollLeft = cx * curS - relX;
+      wrapEl.scrollTop = cy * curS - relY;
+    }
+  }
+  function fit(keepAnchor) {
+    applyScale(keepAnchor ? { x: innerWidth / 2, y: innerHeight / 2 } : null);
+    const btn = $('#hud .vfit');
+    if (btn) btn.textContent = vmode === 'fit' ? '整页' : '铺满';
+  }
+  addEventListener('resize', () => fit(true));
+  addEventListener('orientationchange', () => setTimeout(() => fit(true), 80));
+  if (window.visualViewport) visualViewport.addEventListener('resize', () => fit(true));
+  fit();
+
+  /* 按钮缩放 / 视图切换 */
+  const clampZ = z => Math.min(3.2, Math.max(0.8, z));
+  const zIn = $('#hud .zin'), zOut = $('#hud .zout'), vFitBtn = $('#hud .vfit');
+  if (zIn) zIn.addEventListener('click', () => { zoom = clampZ(zoom * 1.25); applyScale({ x: innerWidth / 2, y: innerHeight / 2 }); });
+  if (zOut) zOut.addEventListener('click', () => { zoom = clampZ(zoom / 1.25); applyScale({ x: innerWidth / 2, y: innerHeight / 2 }); });
+  if (vFitBtn) vFitBtn.addEventListener('click', () => {
+    vmode = vmode === 'fit' ? 'fill' : 'fit';
+    zoom = 1;
+    applyScale();
+    if (wrapEl) { wrapEl.scrollTop = 0; wrapEl.scrollLeft = 0; }
+    vFitBtn.textContent = vmode === 'fit' ? '整页' : '铺满';
+  });
+
+  /* 双指缩放（iPhone / Android 通用）：以两指中点为锚点 */
+  /* iOS Safari 的页面级缩放不受 touch-action 约束，需用私有 gesture 事件拦掉，
+     否则会出现“系统缩放 + 自定义缩放”叠加；Android Chrome 无此事件，直接忽略。 */
+  if (wrapEl) {
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => {
+      wrapEl.addEventListener(t, e => e.preventDefault(), { passive: false });
+    });
+  }
+  let pinch = null;
+  if (wrapEl) {
+    wrapEl.addEventListener('touchstart', e => {
+      if (e.touches.length === 2) {
+        const [a, b] = e.touches;
+        pinch = {
+          d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+          z: zoom,
+          x: (a.clientX + b.clientX) / 2,
+          y: (a.clientY + b.clientY) / 2,
+        };
+      }
+    }, { passive: true });
+    wrapEl.addEventListener('touchmove', e => {
+      if (!pinch || e.touches.length !== 2) return;
+      e.preventDefault();
+      const [a, b] = e.touches;
+      const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+      zoom = clampZ(pinch.z * (d / pinch.d));
+      applyScale({ x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 });
+    }, { passive: false });
+    wrapEl.addEventListener('touchend', () => { pinch = null; }, { passive: true });
+  }
+
+  /* 手机横屏默认“铺满宽度”：16:9 画布占满屏宽，纵向滑动看完整页 */
+  if (COARSE && innerWidth > innerHeight && Math.min(innerWidth, innerHeight) <= 500) {
+    vmode = 'fill';
+    fit();
+  }
 
   /* ---------------- 导航与分步 ---------------- */
   let idx = 0;
@@ -450,12 +535,38 @@
     }
   });
 
-  let touchX = null;
-  addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+  /* ---------------- 移动端：竖屏引导（可跳过） ---------------- */
+  function fitRotate() {
+    const phone = Math.min(innerWidth, innerHeight) <= 500;
+    document.body.classList.toggle('portrait-phone',
+      phone && innerHeight > innerWidth && !sessionStorage.getItem('rh-skip'));
+  }
+  addEventListener('resize', fitRotate);
+  addEventListener('orientationchange', () => setTimeout(fitRotate, 60));
+  fitRotate();
+  const rh = document.getElementById('rotate-hint');
+  if (rh) {
+    rh.querySelector('.rh-skip').addEventListener('click', () => {
+      try { sessionStorage.setItem('rh-skip', '1'); } catch (_) {}
+      fitRotate();
+    });
+    // 引导层出现时挡住翻页触摸/滚轮
+    rh.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+    rh.addEventListener('touchend', e => e.stopPropagation(), { passive: true });
+  }
+
+  let touchX = null, touchY = null;
+  addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) { touchX = null; return; }
+    touchX = e.touches[0].clientX; touchY = e.touches[0].clientY;
+  }, { passive: true });
   addEventListener('touchend', e => {
     if (touchX === null) return;
     const dx = e.changedTouches[0].clientX - touchX;
-    if (Math.abs(dx) > 50) (dx < 0 ? next() : prev());
+    const dy = e.changedTouches[0].clientY - touchY;
+    // 纵向意图（滚动看完整页内容）优先；画布已放大可横向平移时，不再触发翻页
+    const canPanX = wrapEl && (wrapEl.scrollWidth - wrapEl.clientWidth) > 4;
+    if (!canPanX && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) (dx < 0 ? next() : prev());
     touchX = null;
   }, { passive: true });
 

@@ -42,7 +42,18 @@ body {
 }
 
 /* ---------------- 舞台与页面定位 ---------------- */
-#stage-wrap { position: fixed; inset: 0; display: grid; place-items: center; }
+#stage-wrap {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  overflow: auto; overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;            /* 交给自定义双指缩放，屏蔽浏览器整页缩放 */
+}
+/* 画布尺寸器：让“铺满宽度/放大”后超出的部分可以被真实滚动到（transform 不参与布局） */
+#stage-size {
+  position: relative; flex: 0 0 auto; margin: auto;
+  width: calc(1280px * var(--s)); height: calc(720px * var(--s));
+}
 /* 舞台外一圈品牌光晕，让画布“浮”在环境里 */
 #stage-wrap::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
@@ -53,8 +64,8 @@ body {
 #stage {
   width: 1280px; height: 720px;
   transform: scale(var(--s));
-  transform-origin: center center;
-  position: relative;
+  transform-origin: 0 0;
+  position: absolute; top: 0; left: 0;
   background: var(--paper);
   box-shadow:
     0 40px 120px rgba(0, 0, 0, .62),
@@ -804,8 +815,9 @@ body.blank { background: #000; }
   @page { size: 1280px 720px; margin: 0; }
   body { background: #fff; overflow: visible; }
   #timebar, #hud, #overview, #presenter, #help { display: none !important; }
-  #stage-wrap { position: static; }
+  #stage-wrap { position: static; overflow: visible; }
   #stage-wrap::before { display: none !important; }
+  #stage-size { width: 1280px; height: 720px; margin: 0; }
   #stage { transform: none; width: 1280px; height: 720px; box-shadow: none; border-radius: 0; }
   .slide { position: relative; inset: auto; opacity: 1 !important; visibility: visible !important; width: 1280px; height: 720px; page-break-after: always; break-after: page; animation: none !important; }
   .slide::before, .slide::after { animation: none !important; }
@@ -1133,4 +1145,73 @@ body.blank { background: #000; }
 @media print {
   .slide.active.thanks .thk-rule, .slide.active.thanks .thk-word,
   .slide.active.thanks .thk-foot, .thk-wave path:first-of-type { animation: none !important; }
+}
+
+/* ============================================================
+   移动端轻量适配（16:9 画布不变，只优化触摸与引导）
+   ============================================================ */
+
+/* HUD 缩放/视图按钮：默认隐藏，只在触摸设备上出现，避免干扰投影场景 */
+#hud .vfit, #hud .zin, #hud .zout { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  #hud .vfit, #hud .zin, #hud .zout { display: inline-block; }
+}
+
+/* 讲稿 / 总览 / 帮助：手机上的滚动体验 */
+#overview, #presenter, #help {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+#presenter .p-body { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+/* 竖屏引导层：建议横屏，可点“仍要竖屏查看”关闭（本次会话内不再出现） */
+#rotate-hint {
+  position: fixed; inset: 0; z-index: 200; display: none;
+  place-items: center; text-align: center; padding: 32px;
+  background: radial-gradient(900px 560px at 50% 40%, #16264f 0%, #0b1430 55%, #050a18 100%);
+  color: #dbe9fb;
+}
+body.portrait-phone #rotate-hint { display: grid; }
+body.portrait-phone.force-portrait #rotate-hint { display: none; }
+#rotate-hint .rh-icon {
+  width: 84px; height: 84px; margin: 0 auto 22px; border-radius: 22px;
+  border: 2.5px solid rgba(127, 211, 255, .55);
+  display: grid; place-items: center;
+  animation: rhTilt 2.4s ease-in-out infinite;
+}
+#rotate-hint .rh-icon svg { width: 46px; height: 46px; }
+@keyframes rhTilt {
+  0%, 28%  { transform: rotate(0deg); }
+  55%, 80% { transform: rotate(-90deg); }
+  100%     { transform: rotate(-90deg); }
+}
+#rotate-hint h2 { margin: 0 0 10px; font-size: 20px; letter-spacing: .06em; color: #fff; }
+#rotate-hint p { margin: 0 0 24px; font-size: 14px; color: #9db4d4; line-height: 1.7; }
+#rotate-hint .rh-skip {
+  background: rgba(255, 255, 255, .06); border: 1px solid rgba(140, 200, 255, .35);
+  color: #cfe4ff; border-radius: 999px; padding: 9px 22px; font-size: 14px; cursor: pointer;
+}
+
+/* 横屏手机：HUD 加大触控目标、隐藏键盘提示 */
+@media (orientation: landscape) and (max-height: 500px) {
+  #hud {
+    right: 12px; bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding: 10px 16px; gap: 10px; font-size: 15px;
+  }
+  #hud button { padding: 9px 14px; font-size: 15px; border-radius: 10px; }
+  #hud .hint { display: none; }            /* 键盘提示在手机上无意义 */
+  #hud .pres { display: none; }            /* 讲稿视图为键盘/桌面场景保留 */
+  #hud .zin, #hud .zout { padding: 9px 13px; font-weight: 700; }
+  body.presenting #hud { opacity: 0; }
+  body.presenting #hud:active { opacity: 1; }
+  /* 触摸设备没有 hover：放大镜提示条改为常显轻提示 */
+  .zoomable .zoom-hint { opacity: .92; }
+  #overview { padding: 24px 20px; }
+  #presenter .p-body { grid-template-columns: 1fr; }  /* 讲稿双栏在窄屏改单栏 */
+  #presenter .p-text, #presenter .p-detail { font-size: 15px; line-height: 1.85; }  /* 手机可读字号 */
+  #help .help-card { font-size: 15px; }
+}
+/* 手机触摸设备：全局禁用双击缩放抖动，保留滑动手势 */
+@media (hover: none) and (pointer: coarse) {
+  html { touch-action: manipulation; }
 }

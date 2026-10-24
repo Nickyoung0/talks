@@ -1,0 +1,162 @@
+/* ============================================================
+   搭积木互动页样式（第 36 页）
+   舞台在左（SVG：地基 + 框架 + 积木），方案按钮与要点在右
+   ============================================================ */
+
+/* 页面底色：比普通内容页更"工地图纸"一点，与积木主题呼应 */
+.slide.blocks {
+  background:
+    radial-gradient(720px 420px at 26% 6%, #f3f9ff 0%, rgba(243, 249, 255, 0) 62%),
+    linear-gradient(180deg, #fbfdff 0%, #edf5fe 100%);
+}
+.slide .blocks-body { display: block; margin-top: 20px; }
+
+.blk-root {
+  height: 100%; min-height: 0;
+  display: flex; gap: 26px; align-items: stretch;
+}
+
+/* ---------------- 左：舞台 ---------------- */
+.bl-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+.bl-stage { flex: 1 1 auto; min-height: 0; }
+.blk-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* 舞台文字 */
+.blk-svg text {
+  font-family: var(--sans);
+  fill: #33475c;
+  text-anchor: middle;
+  dominant-baseline: auto;
+}
+.bl-name { font-size: 19px; font-weight: 800; fill: #003C83; letter-spacing: .5px; }
+.bl-cap { font-size: 12.5px; font-weight: 700; fill: #7d94ac; text-anchor: start !important; letter-spacing: 2px; }
+
+/* 地面 */
+.bl-horizon { stroke: rgba(1, 92, 183, .35); stroke-width: 1.5; }
+.bl-shadow { fill: rgba(1, 92, 183, .16); }
+
+/* 地基（立体厚板：顶面 + 右侧厚度面 + 正面） */
+.fd-top { fill: url(#blFdnTop); stroke: rgba(1, 92, 183, .30); stroke-width: 1.2; }
+.fd-side { fill: #a6b9cc; stroke: rgba(1, 92, 183, .22); stroke-width: 1; }
+.fd-body { stroke: rgba(1, 92, 183, .35); stroke-width: 1.4; }
+.fd-cell { fill: rgba(255, 255, 255, .82); stroke: rgba(1, 92, 183, .18); }
+.fd-t { font-size: 13px; font-weight: 600; fill: #2b4258; letter-spacing: 0; }
+
+/* 框架（立体钢架：柱身渐变 + 梁的厚度面） */
+.fr-pillar { fill: url(#blPillar); stroke: rgba(1, 92, 183, .30); stroke-width: .8; }
+.fr-btop { fill: #6ea9e0; stroke: rgba(1, 92, 183, .28); stroke-width: .8; }
+.fr-bside { fill: #0a4c93; stroke: rgba(1, 92, 183, .30); stroke-width: .8; }
+.fr-beam { stroke: rgba(1, 92, 183, .35); stroke-width: 1; }
+.fr-brace { stroke: rgba(1, 92, 183, .22); stroke-width: 1.2; stroke-dasharray: 4 4; }
+.fr-slot rect { fill: rgba(255, 255, 255, .95); stroke: rgba(1, 92, 183, .28); stroke-width: 1; }
+.fr-slot .fr-slot-hl { fill: rgba(255, 255, 255, .85); stroke: none; }
+.fr-slot text { font-size: 12.5px; font-weight: 600; fill: #1c4f86; }
+
+/* 地基/框架在换建筑时闪一下，强调"这两层没动" */
+.bl-frame.pulse .fr-beam, .bl-frame.pulse .fr-btop,
+.bl-found.pulse .fd-body, .bl-found.pulse .fd-top { animation: blPulse .7s var(--ease); }
+@keyframes blPulse {
+  0%   { filter: none; }
+  35%  { filter: drop-shadow(0 0 8px rgba(53, 198, 255, .85)); }
+  100% { filter: none; }
+}
+
+/* ---------------- 积木（立体：顶面 + 右侧面 + 正面 + 颗粒） ---------------- */
+.blk { cursor: default; }
+.blk .b-body { fill: rgb(var(--c)); stroke: rgba(0, 0, 0, .20); stroke-width: .8; }
+.blk .b-top { fill: rgb(var(--c)); filter: brightness(1.30); stroke: rgba(255, 255, 255, .38); stroke-width: .6; }
+.blk .b-side { fill: rgb(var(--c)); filter: brightness(.62); stroke: rgba(0, 0, 0, .24); stroke-width: .6; }
+.blk .b-stud { fill: rgb(var(--c)); filter: brightness(1.36); stroke: rgba(0, 0, 0, .18); stroke-width: .6; }
+.blk .b-sstud { fill: rgb(var(--c)); filter: brightness(.78); stroke: rgba(0, 0, 0, .10); stroke-width: .5; }
+.blk .b-shine { fill: rgba(255, 255, 255, .32); }
+.blk .b-foot { fill: rgba(0, 0, 0, .24); }
+.blk .b-t { font-size: 13px; font-weight: 700; fill: #fff; letter-spacing: .3px; }
+/* 实体投影：让积木看起来压在框架上 */
+.blk .blk-in { filter: drop-shadow(0 4px 5px rgba(6, 42, 80, .24)); }
+
+/* 虚线空块：留给听众的那一块 */
+.blk.k-ghost .b-body { fill: rgba(255, 255, 255, .35); stroke: rgba(1, 92, 183, .55); stroke-dasharray: 5 4; }
+.blk.k-ghost .b-top, .blk.k-ghost .b-side {
+  fill: rgba(255, 255, 255, .42); filter: none;
+  stroke: rgba(1, 92, 183, .5); stroke-dasharray: 5 4;
+}
+.blk.k-ghost .b-stud, .blk.k-ghost .b-sstud { fill: rgba(1, 92, 183, .18); filter: none; stroke: rgba(1, 92, 183, .40); }
+.blk.k-ghost .b-t { fill: #1c4f86; }
+.blk.k-ghost .b-shine { fill: rgba(255, 255, 255, .5); }
+.blk.k-ghost .b-foot { fill: rgba(1, 92, 183, .10); }
+.blk.k-ghost .blk-in { animation: blDrop .58s cubic-bezier(.2, 1.3, .4, 1) both, blGhost 1.8s ease-in-out .9s infinite; }
+@keyframes blGhost { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+
+/* 逐块落下：从上方掉入，触底压扁再回弹 */
+.blk-in {
+  transform-box: fill-box; transform-origin: 50% 100%;
+  animation: blDrop .58s cubic-bezier(.2, 1.3, .4, 1) both;
+}
+@keyframes blDrop {
+  0%   { transform: translateY(-210px) scaleY(1.10); opacity: 0; }
+  50%  { transform: translateY(0) scaleY(.84); opacity: 1; }
+  66%  { transform: translateY(0) scaleY(1.06); }
+  80%  { transform: translateY(4px) scaleY(.97); }
+  92%  { transform: translateY(0) scaleY(1.01); }
+  100% { transform: translateY(0) scaleY(1); opacity: 1; }
+}
+/* 换建筑时旧积木飞散 */
+.blk.in-out .blk-in { animation: blOut .26s ease-in forwards; }
+@keyframes blOut {
+  0%   { transform: none; opacity: 1; }
+  100% { transform: translate(26px, -130px) rotate(9deg); opacity: 0; }
+}
+
+/* ---------------- 方案按钮 ---------------- */
+.bl-chips { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+.bl-chip, .bl-auto {
+  font-family: var(--sans); font-size: 14px; font-weight: 600; color: #1c4f86;
+  padding: 9px 16px; border-radius: 999px; cursor: pointer;
+  border: 1.5px solid rgba(1, 92, 183, .40);
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 0 6px 16px -10px rgba(1, 92, 183, .8);
+  transition: background .22s, color .22s, transform .22s var(--ease), box-shadow .22s;
+}
+.bl-chip:hover, .bl-auto:hover { transform: translateY(-2px); box-shadow: 0 12px 22px -12px rgba(1, 92, 183, .9); }
+.bl-chip.on {
+  background: linear-gradient(120deg, var(--blue), var(--blue-3));
+  color: #fff; border-color: transparent;
+  box-shadow: 0 12px 24px -12px rgba(1, 92, 183, .95);
+}
+.bl-auto { margin-left: auto; color: #5b7085; border-style: dashed; }
+.bl-auto.on {
+  background: linear-gradient(120deg, #0E9BD8, #35C6FF); color: #fff; border-style: solid; border-color: transparent;
+}
+
+/* ---------------- 右：说明面板 ---------------- */
+.bl-side {
+  flex: 0 0 318px; display: flex; flex-direction: column; gap: 9px;
+  padding: 16px 18px; border-radius: 16px;
+  border: 1px solid rgba(1, 92, 183, .14);
+  background: linear-gradient(158deg, rgba(255, 255, 255, .96), rgba(235, 245, 255, .82));
+  box-shadow: var(--sh-2), inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+.bl-pname { font-size: 19px; font-weight: 800; color: #003C83; line-height: 1.3; }
+.bl-pdesc { font-size: 14px; line-height: 1.62; color: #40566d; }
+.bl-kinds { display: flex; flex-wrap: wrap; gap: 6px; }
+.bl-badge {
+  font-size: 12px; font-weight: 700; color: #fff;
+  padding: 4px 10px; border-radius: 999px;
+  background: rgb(var(--c));
+  box-shadow: 0 4px 10px -5px rgba(var(--c), .9);
+}
+.bl-note {
+  margin-top: 2px; font-size: 13px; line-height: 1.55; color: #1c4f86;
+  padding: 8px 12px; border-radius: 10px;
+  background: rgba(1, 92, 183, .07); border: 1px dashed rgba(1, 92, 183, .28);
+}
+.bl-summary { list-style: none; display: flex; flex-direction: column; gap: 7px; margin-top: auto; }
+.bl-summary li {
+  position: relative; padding-left: 15px;
+  font-size: 13.5px; line-height: 1.5; color: #40566d;
+}
+.bl-summary li::before {
+  content: ""; position: absolute; left: 0; top: 7px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: linear-gradient(150deg, var(--blue-3), var(--blue));
+}

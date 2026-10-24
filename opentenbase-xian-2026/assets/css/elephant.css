@@ -1,0 +1,286 @@
+/* 目录页入场动画：写实派大象背着行囊走来，行囊里弹出扩展工具
+ *
+ * 3D 结构（每层 translateZ 不同 → 走近时真实视差 + 转身时的体积感）：
+ *   .ele-stage  perspective:1200px
+ *     ├ 远/中/近 三层地面（不同速率滚动，近景压在脚前 → 纵深）
+ *     ├ 软/硬 双层落地投影（躺在地面平面上，随走近收拢到脚底）
+ *     └ .ele-camera  dolly translateZ(-1500→0) + rotateY(26°→0) + rotateX(8°→0)
+ *         └ .ele-bob     走路颠簸
+ *             └ .ele-rig 站定后持续 ±4.5° 绕行微摆（立体感一直可见）
+ *                 ├ .ele-l-tail     -150  尾巴
+ *                 ├ .ele-l-far      -118  远侧两腿（压暗）
+ *                 ├ .ele-l-bodyback  -54  躯干厚度侧片（暗色副本）
+ *                 ├ .ele-l-body         0  躯干（呼吸微缩放）
+ *                 ├ .ele-l-near      +62  近侧两腿
+ *                 ├ .ele-l-gear     +104  象背毯 + 行囊（工具沿 Z 弹出）
+ *                 ├ .ele-l-headback +122  象头厚度侧片
+ *                 ├ .ele-l-head     +168  象头 / 耳 / 眼
+ *                 └ .ele-l-trunk    +206  象鼻 + 象牙（最前，摆幅最大）
+ *   另有 .ele-fog 大气透视（走近时雾散）、三层对焦虚化。
+ *
+ * 时序：0 → 2.0s 走近；2.05s 开盖；2.25s 起工具依次弹出；3.85s 淡出，目录卡片淡入
+ */
+
+.ele-stage {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  perspective: 1200px; perspective-origin: 50% 40%;
+}
+.slide.active .ele-stage { animation: eleStageOut .7s ease 3.85s forwards; }
+@keyframes eleStageOut { to { opacity: 0; } }
+
+.ele-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* 地平线雾带 */
+.ele-horizon {
+  position: absolute; left: 0; right: 0; top: 52%; height: 250px;
+  background: radial-gradient(58% 100% at 50% 0%, rgba(1, 92, 183, .16), transparent 70%);
+}
+
+/* ── 三层视差地面：远慢近快，近景压在脚前 ─────────── */
+.ele-ground {
+  position: absolute; left: -30%; right: -30%; bottom: 0;
+  transform-origin: bottom center;
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, .95), transparent 76%);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, .95), transparent 76%);
+}
+.ele-g-far {
+  height: 300px; transform: rotateX(70deg); opacity: .32;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(31, 111, 178, .16) 0 2px, transparent 2px 96px),
+    repeating-linear-gradient(0deg, rgba(31, 111, 178, .16) 0 2px, transparent 2px 76px);
+}
+.ele-g-mid {
+  height: 340px; transform: rotateX(74deg); opacity: .5;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(31, 111, 178, .2) 0 2px, transparent 2px 64px),
+    repeating-linear-gradient(0deg, rgba(31, 111, 178, .2) 0 2px, transparent 2px 52px);
+}
+.ele-g-near {
+  height: 150px; transform: rotateX(80deg); opacity: .42; bottom: -2%;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(31, 111, 178, .26) 0 3px, transparent 3px 34px),
+    repeating-linear-gradient(0deg, rgba(31, 111, 178, .22) 0 2px, transparent 2px 26px);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, .8), transparent 88%);
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, .8), transparent 88%);
+}
+.slide.active .ele-g-far  { animation: eleGFar 2s cubic-bezier(.55, .05, .28, 1) both; }
+.slide.active .ele-g-mid  { animation: eleGMid 2s cubic-bezier(.55, .05, .28, 1) both; }
+.slide.active .ele-g-near { animation: eleGNear 2s cubic-bezier(.55, .05, .28, 1) both; }
+@keyframes eleGFar  { from { background-position: 0 0, 0 0; } to { background-position: 0 0, 0 38px; } }
+@keyframes eleGMid  { from { background-position: 0 0, 0 0; } to { background-position: 0 0, 0 104px; } }
+@keyframes eleGNear { from { background-position: 0 0, 0 0; } to { background-position: 0 0, 0 208px; } }
+
+/* ── 落地投影：软环境影 + 硬接触影，都躺在地面平面上 ── */
+.ele-shadow {
+  position: absolute; left: 50%; margin-left: -210px;
+  transform-origin: 50% 100%;
+  background: radial-gradient(ellipse at 50% 44%, rgba(24, 34, 46, .5), rgba(24, 34, 46, 0) 68%);
+}
+.ele-sh-soft { top: 60%; width: 420px; height: 122px; }
+.ele-sh-hard {
+  top: 64%; width: 250px; height: 62px; margin-left: -125px;
+  background: radial-gradient(ellipse at 50% 46%, rgba(20, 28, 38, .58), rgba(20, 28, 38, 0) 70%);
+}
+.slide.active .ele-sh-soft,
+.slide.active .ele-sh-hard { animation: eleShadow 2s cubic-bezier(.55, .05, .28, 1) both; }
+@keyframes eleShadow {
+  from { transform: translateY(-92px) rotateX(74deg) scale(.34); opacity: .18; }
+  to   { transform: translateY(0) rotateX(74deg) scale(1);        opacity: 1; }
+}
+
+/* 大气透视：走近时雾散 */
+.ele-fog {
+  position: absolute; inset: 0; opacity: .62;
+  background: linear-gradient(to bottom, rgba(238, 245, 252, .25) 0%, rgba(238, 245, 252, .9) 55%, rgba(238, 245, 252, .98) 100%);
+}
+.slide.active .ele-fog { animation: eleFog 1.7s cubic-bezier(.55, .05, .28, 1) both; }
+@keyframes eleFog { to { opacity: 0; } }
+
+/* 脚下的尘土（前景，压在象脚之前） */
+.ele-dust { position: absolute; left: 50%; top: 76%; width: 0; height: 0; }
+.ele-dust i {
+  position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px;
+  border-radius: 50%; background: radial-gradient(circle, rgba(140, 150, 160, .5), transparent 70%);
+  opacity: 0;
+}
+.slide.active .ele-dust i { animation: eleDust .95s ease-out both; }
+.slide.active .ele-dust i:nth-child(1) { animation-delay: 1.5s;  --dx: -132px; }
+.slide.active .ele-dust i:nth-child(2) { animation-delay: 1.64s; --dx: 30px; }
+.slide.active .ele-dust i:nth-child(3) { animation-delay: 1.78s; --dx: 128px; }
+@keyframes eleDust {
+  0%   { opacity: 0; transform: translate(var(--dx), 0) scale(.3); }
+  30%  { opacity: .85; }
+  100% { opacity: 0; transform: translate(calc(var(--dx) * 2), -30px) scale(1.6); }
+}
+
+/* ── 相机三层：dolly → 颠簸 → 站定绕行微摆 ─────────── */
+.ele-camera {
+  position: absolute; left: 50%; top: 62%;
+  width: 480px; height: 377px; margin-left: -240px; margin-top: -196px;
+  transform-style: preserve-3d;
+}
+.slide.active .ele-camera { animation: eleApproach 2s cubic-bezier(.55, .05, .28, 1) both; }
+@keyframes eleApproach {
+  0%   { transform: translate3d(-64px, 58px, -1500px) rotateY(26deg) rotateX(8deg); opacity: 0; }
+  9%   { opacity: 1; }
+  64%  { transform: translate3d(0, 0, 54px) rotateY(-5deg) rotateX(-1deg); }
+  100% { transform: translate3d(0, 0, 0) rotateY(0deg) rotateX(0deg); }
+}
+
+.ele-bob { position: absolute; inset: 0; transform-style: preserve-3d; }
+.slide.active .ele-bob { animation: eleBounce .46s ease-in-out 4 both; }
+@keyframes eleBounce {
+  0%, 100% { transform: translateY(0) rotateZ(0deg); }
+  25%      { transform: translateY(-9px) rotateZ(-.6deg); }
+  75%      { transform: translateY(-6px) rotateZ(.6deg); }
+}
+
+.ele-rig { position: absolute; inset: 0; transform-style: preserve-3d; }
+.slide.active .ele-rig { animation: eleSway 6s ease-in-out 2.05s infinite; }
+@keyframes eleSway {
+  0%, 100% { transform: rotateY(-4.5deg) rotateX(1.2deg); }
+  50%      { transform: rotateY(4.5deg) rotateX(-1.2deg); }
+}
+
+/* ── 十大图层：不同 Z 深度 ──────────────────────── */
+.ele-layer { position: absolute; inset: 0; transform-style: preserve-3d; }
+.ele-layer > svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.ele-l-tail     { transform: translateZ(-150px); }
+.ele-l-far      { transform: translateZ(-118px); }
+.ele-l-bodyback { transform: translateZ(-54px); }
+.ele-l-body     { transform: translateZ(0); }
+.ele-l-near     { transform: translateZ(62px); }
+.ele-l-gear     { transform: translateZ(104px); }
+.ele-l-headback { transform: translateZ(122px); }
+.ele-l-head     { transform: translateZ(168px); }
+.ele-l-trunk    { transform: translateZ(206px); }
+
+/* 呼吸：躯干极轻微起伏 */
+.slide.active .ele-l-body { animation: eleBreath 3.6s ease-in-out 2.1s infinite; }
+@keyframes eleBreath {
+  0%, 100% { transform: translateZ(0) scale(1); }
+  50%      { transform: translateZ(0) scale(1.014); }
+}
+
+/* 对焦：走近时由虚变实（大气透视） */
+.slide.active .ele-l-body > svg { animation: eleFocus 1.8s cubic-bezier(.55, .05, .28, 1) both; }
+.slide.active .ele-l-head > svg { animation: eleFocus 1.8s cubic-bezier(.55, .05, .28, 1) both; }
+.slide.active .ele-l-trunk > svg { animation: eleFocus 1.8s cubic-bezier(.55, .05, .28, 1) both; }
+@keyframes eleFocus {
+  from { filter: drop-shadow(0 22px 26px rgba(24, 34, 46, .22)) blur(6px) saturate(.7); }
+  to   { filter: drop-shadow(0 22px 26px rgba(24, 34, 46, .22)) blur(0) saturate(1); }
+}
+.ele-l-bodyback > svg,
+.ele-l-headback > svg { filter: drop-shadow(0 14px 18px rgba(24, 34, 46, .26)); }
+.ele-l-near > svg { filter: drop-shadow(0 10px 12px rgba(24, 34, 46, .2)); }
+.ele-l-far > svg { filter: drop-shadow(0 8px 10px rgba(24, 34, 46, .16)) brightness(.92); }
+
+/* ── 走路动作 ──────────────────────────────────── */
+.ele-leg { transform-box: fill-box; transform-origin: top center; }
+.ele-ear { transform-box: fill-box; transform-origin: 6% 44%; }
+.ele-trunk { transform-box: fill-box; transform-origin: top center; }
+.ele-tail { transform-box: fill-box; transform-origin: top left; }
+.ele-bag-lid { transform-box: fill-box; transform-origin: 10% 100%; }
+
+.slide.active .ele-l-near .ele-leg:nth-child(1),
+.slide.active .ele-l-far .ele-leg:nth-child(2) { animation: eleStep .46s ease-in-out 4 both; }
+.slide.active .ele-l-near .ele-leg:nth-child(2),
+.slide.active .ele-l-far .ele-leg:nth-child(1) { animation: eleStepRev .46s ease-in-out 4 both; }
+@keyframes eleStep {
+  0%, 100% { transform: rotate(0deg); }
+  30%      { transform: rotate(-12deg); }
+  70%      { transform: rotate(10deg); }
+}
+@keyframes eleStepRev {
+  0%, 100% { transform: rotate(0deg); }
+  30%      { transform: rotate(11deg); }
+  70%      { transform: rotate(-9deg); }
+}
+
+.slide.active .ele-ear-near { animation: eleEar .62s ease-in-out 3 both; }
+.slide.active .ele-ear-far  { animation: eleEar .62s ease-in-out 3 .12s both; }
+@keyframes eleEar {
+  0%, 100% { transform: rotate(0deg) scaleX(1); }
+  50%      { transform: rotate(-10deg) scaleX(.76); }
+}
+.slide.active .ele-trunk { animation: eleTrunk .92s ease-in-out 2 both; }
+@keyframes eleTrunk {
+  0%, 100% { transform: rotate(0deg); }
+  35%      { transform: rotate(9deg); }
+  70%      { transform: rotate(-6deg); }
+}
+.slide.active .ele-tail { animation: eleTail .7s ease-in-out 3 both; }
+@keyframes eleTail {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(12deg); }
+}
+
+/* ── 行囊开盖 ──────────────────────────────────── */
+.slide.active .ele-bag-lid { animation: eleLid .55s cubic-bezier(.3, 1.4, .4, 1) 2.05s both; }
+@keyframes eleLid {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-34deg); }
+}
+
+/* ── 行囊里朝观众弹出的扩展工具（沿 Z 轴） ──────── */
+.ele-tools {
+  position: absolute; left: 61.5%; top: 31.5%; width: 0; height: 0;
+  transform-style: preserve-3d;
+}
+.ele-tool {
+  position: absolute; left: 0; top: 0; opacity: 0;
+  transform: translate3d(calc(-50% + var(--tx)), calc(-50% + var(--ty)), 96px);
+}
+.slide.active .ele-tool {
+  animation: eleToolPop .6s cubic-bezier(.2, 1.5, .4, 1) both;
+  animation-delay: calc(2.25s + var(--i, 0) * .16s);
+}
+@keyframes eleToolPop {
+  from { opacity: 0; transform: translate3d(calc(-50% + var(--tx)), calc(-50% + var(--ty) + 34px), 4px) scale(.35); }
+  70%  { opacity: 1; }
+  to   { opacity: 1; transform: translate3d(calc(-50% + var(--tx)), calc(-50% + var(--ty)), 96px) scale(1); }
+}
+.ele-tool-in {
+  display: flex; align-items: center; gap: 7px; white-space: nowrap;
+  padding: 5px 12px 5px 7px; border-radius: 22px;
+  background: #fff; border: 1.5px solid var(--c);
+  box-shadow: 0 8px 20px rgba(12, 40, 72, .18);
+}
+.slide.active .ele-tool-in {
+  animation: eleFloat 2.8s ease-in-out infinite;
+  animation-delay: calc(2.9s + var(--i, 0) * .18s);
+}
+@keyframes eleFloat {
+  0%, 100% { transform: translateY(-4px); }
+  50%      { transform: translateY(4px); }
+}
+.ele-tool-ic { display: flex; width: 24px; height: 24px; color: var(--c); }
+.ele-tool-ic svg { width: 24px; height: 24px; }
+.ele-tool-name {
+  font-family: var(--mono); font-size: 13px; font-weight: 700;
+  color: var(--navy); letter-spacing: .2px;
+}
+
+/* 演讲者提前按 →：入场动画立即收尾，不等满 3.9s */
+.slide.agenda.rush .ele-camera,
+.slide.agenda.rush .ele-bob,
+.slide.agenda.rush .ele-rig,
+.slide.agenda.rush .ele-leg,
+.slide.agenda.rush .ele-ear,
+.slide.agenda.rush .ele-trunk,
+.slide.agenda.rush .ele-tail,
+.slide.agenda.rush .ele-ground,
+.slide.agenda.rush .ele-shadow,
+.slide.agenda.rush .ele-fog,
+.slide.agenda.rush .ele-l-body > svg,
+.slide.agenda.rush .ele-l-head > svg,
+.slide.agenda.rush .ele-l-trunk > svg,
+.slide.agenda.rush .ele-dust i { animation-delay: 0s !important; animation-duration: .25s !important; }
+.slide.agenda.rush .ele-bag-lid { animation-delay: .1s !important; animation-duration: .3s !important; }
+.slide.agenda.rush .ele-tool { animation-delay: calc(.25s + var(--i, 0) * .06s) !important; animation-duration: .3s !important; }
+.slide.agenda.rush .ele-stage { animation-delay: .8s !important; animation-duration: .3s !important; }
+
+@media print {
+  .ele-stage { display: none !important; }
+  .agenda-grid { animation: none !important; opacity: 1 !important; transform: none !important; }
+}

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>从扩展机制看 PostgreSQL 的设计哲学｜OpenTenBase 城市行 · 西安站</title>
+<meta name="description" content="OpenTenBase 城市行西安站（2026.11.07 西安邮电大学）主题分享：从扩展机制看 PostgreSQL 的设计哲学。动态网页演示，支持翻页、分步揭示、演讲者视图与 PDF 导出。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23015CB7' d='M4 6h10v10H4z'/%3E%3Cpath fill='%2335C6FF' d='M18 6h10v10H18z'/%3E%3Cpath fill='%23003C83' d='M4 18h10v10H4z'/%3E%3Cpath fill='%237A5CFF' d='M18 18h10v10H18z'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/deck.css">
+<link rel="stylesheet" href="assets/css/machine.css">
+<link rel="stylesheet" href="assets/css/elephant.css">
+<link rel="stylesheet" href="assets/css/blocks.css">
+</head>
+<body>
+<div id="timebar" aria-hidden="true"></div>
+<div id="stage-wrap"><div id="stage"></div></div>
+
+<div id="hud" role="toolbar" aria-label="演示控制">
+  <span class="hint">·</span>
+  <span class="pagenum">1 / 1</span>
+  <button class="prev" title="上一页">‹</button>
+  <button class="next" title="下一步">›</button>
+  <button class="ov" title="总览 (O)">总览</button>
+  <button class="pres" title="演讲者视图 (N)">讲稿</button>
+  <button class="fs" title="全屏 (F)">全屏</button>
+</div>
+
+<div id="overview" aria-label="幻灯片总览">
+  <h2>全部页面 · 点击跳转（Esc 关闭）</h2>
+  <div class="ov-grid"></div>
+</div>
+
+<aside id="presenter" aria-label="演讲者视图">
+  <header>
+    <h2></h2><span class="p-meta"></span>
+    <div id="timer"><span class="read">00:00</span><button class="toggle">开始</button><button class="reset">清零</button></div>
+  </header>
+  <div class="p-body">
+    <div class="p-col"><h3>讲稿 · 可直接转述</h3><div class="p-text"></div></div>
+    <div class="p-col"><h3>技术展开 · 备查</h3><div class="p-detail"></div></div>
+  </div>
+  <footer>
+    <span class="next-tip"></span><span class="design-tip"></span>
+    <button class="close">关闭（N）</button>
+  </footer>
+</aside>
+
+<div id="video-modal" aria-hidden="true">
+  <button class="vm-close" type="button" title="关闭（Esc）">✕</button>
+  <div class="vm-stage"></div>
+</div>
+
+<div id="help">
+  <div class="help-card">
+    <h2>操作方式</h2>
+    <table>
+      <tr><td><kbd>→</kbd> <kbd>空格</kbd></td><td>下一步（先逐条揭示，再翻页）</td></tr>
+      <tr><td><kbd>←</kbd></td><td>上一页（回看时显示全部要点）</td></tr>
+      <tr><td><kbd>数字</kbd>+<kbd>回车</kbd></td><td>跳转到指定页</td></tr>
+      <tr><td><kbd>O</kbd></td><td>总览网格</td></tr>
+      <tr><td><kbd>N</kbd></td><td>演讲者视图（讲稿 + 计时器）</td></tr>
+      <tr><td><kbd>F</kbd></td><td>全屏</td></tr>
+      <tr><td><kbd>B</kbd></td><td>黑屏</td></tr>
+      <tr><td><kbd>Ctrl/Cmd</kbd>+<kbd>P</kbd></td><td>打印 / 导出 PDF（每页一张）</td></tr>
+    </table>
+  </div>
+</div>
+
+<script src="assets/js/slides-data.js"></script>
+<script src="assets/js/machine.js"></script>
+<script src="assets/js/elephant.js"></script>
+<script src="assets/js/loupe.js"></script>
+<script src="assets/js/blocks.js"></script>
+<script src="assets/js/land-data.js"></script>
+<script src="assets/js/globe.js"></script>
+<script src="assets/js/deck.js"></script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>技术分享 · 杨向博</title>
+<style>
+  :root{
+    --blue:#015CB7; --blue-2:#003C83; --cyan:#35C6FF;
+    --ink:#12263c; --muted:#5b7186; --line:#e2ebf5; --bg:#f5f8fc;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:960px; margin:0 auto; padding:56px 28px 72px}
+  .head{margin-bottom:34px}
+  .kicker{
+    display:inline-block; font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--blue); font-weight:700; margin-bottom:12px;
+  }
+  h1{
+    margin:0 0 12px; font-size:34px; line-height:1.25; letter-spacing:-.01em;
+    background:linear-gradient(92deg,var(--blue-2),var(--blue) 55%,var(--cyan));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .sub{margin:0; color:var(--muted); font-size:15.5px; max-width:620px}
+  .rule{height:3px; width:76px; border-radius:2px; margin:22px 0 0;
+    background:linear-gradient(90deg,var(--blue),var(--cyan))}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:18px}
+  a.card{
+    display:flex; flex-direction:column; text-decoration:none; color:inherit;
+    background:#fff; border:1px solid var(--line); border-radius:14px;
+    padding:22px 22px 20px; box-shadow:0 4px 16px -8px rgba(1,92,183,.22);
+    transition:transform .3s cubic-bezier(.2,.7,.3,1), box-shadow .3s ease, border-color .3s ease;
+  }
+  a.card:hover{transform:translateY(-3px); box-shadow:0 12px 28px -12px rgba(1,92,183,.4); border-color:rgba(1,92,183,.32)}
+  .tag{
+    align-self:flex-start; font-size:11.5px; font-weight:700; letter-spacing:.04em;
+    color:var(--blue); background:#eaf3fd; border:1px solid #cfe3f8;
+    border-radius:999px; padding:3px 10px; margin-bottom:12px;
+  }
+  .card h2{margin:0 0 8px; font-size:19px; line-height:1.4}
+  .card p{margin:0 0 14px; font-size:13.5px; color:var(--muted); line-height:1.65}
+  .meta{
+    margin-top:auto; display:flex; align-items:center; gap:10px;
+    font-size:12.5px; color:#7d90a3; border-top:1px dashed var(--line); padding-top:12px;
+  }
+  .meta .go{margin-left:auto; color:var(--blue); font-weight:700}
+
+  .note{
+    margin-top:40px; background:#fff; border:1px solid var(--line); border-left:3px solid var(--cyan);
+    border-radius:0 12px 12px 0; padding:16px 20px; font-size:13px; color:var(--muted); line-height:1.75;
+  }
+  .note b{color:var(--ink)}
+  .note code{
+    background:#f0f5fa; border-radius:4px; padding:1px 5px;
+    font:12.5px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; color:var(--blue-2);
+  }
+  footer{margin-top:34px; font-size:12.5px; color:#93a3b3; text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <span class="kicker">TALKS</span>
+    <h1>技术分享合集</h1>
+    <p class="sub">PostgreSQL 内核与扩展、可观测性、数据库架构相关的分享材料。每场独立成目录，可单独分发，也可从这儿一起看。</p>
+    <div class="rule"></div>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="./opentenbase-xian-2026/">
+      <span class="tag">PostgreSQL · 扩展</span>
+      <h2>从扩展看 PostgreSQL 的设计哲学</h2>
+      <p>以 pgvector 为主线，讲清 PostgreSQL 的三类接入点：执行接入、代码加载、对象管理，以及它和 Agent 时代 Skills / MCP 的同构之处。</p>
+      <div class="meta"><span>2026-11-07 · 西安邮电大学</span><span class="go">打开 →</span></div>
+    </a>
+  </div>
+
+  <div class="note">
+    <b>新增一场分享：</b>把整场目录（含 <code>index.html</code> 与 <code>assets/</code>）复制到仓库根目录下的一个子目录，例如 <code>pg-conf-2027/</code>，然后在上面 <code>.grid</code> 里加一张同样的卡片即可。GitHub Pages 会自动按目录路径提供访问：<code>https://&lt;用户名&gt;.github.io/talks/pg-conf-2027/</code>
+  </div>
+
+  <footer>杨向博 · PostgreSQL ACE · 西安 PG 用户组</footer>
+</div>
+</body>
+</html>

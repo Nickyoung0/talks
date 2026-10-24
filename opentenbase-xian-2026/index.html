@@ -7,10 +7,10 @@
 <meta name="description" content="OpenTenBase 城市行西安站（2026.11.07 西安邮电大学）主题分享：从扩展机制看 PostgreSQL 的设计哲学。动态网页演示，支持翻页、分步揭示、演讲者视图与 PDF 导出。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23015CB7' d='M4 6h10v10H4z'/%3E%3Cpath fill='%2335C6FF' d='M18 6h10v10H18z'/%3E%3Cpath fill='%23003C83' d='M4 18h10v10H4z'/%3E%3Cpath fill='%237A5CFF' d='M18 18h10v10H18z'/%3E%3C/svg%3E">
 <!-- 版本号 v= 用于破除浏览器/CDN 缓存：每次更新内容后把 ?v= 递增即可，手机上刷新就是最新版 -->
-<link rel="stylesheet" href="assets/css/deck.css?v=20261024b">
-<link rel="stylesheet" href="assets/css/machine.css?v=20261024b">
-<link rel="stylesheet" href="assets/css/elephant.css?v=20261024b">
-<link rel="stylesheet" href="assets/css/blocks.css?v=20261024b">
+<link rel="stylesheet" href="assets/css/deck.css?v=20261024c">
+<link rel="stylesheet" href="assets/css/machine.css?v=20261024c">
+<link rel="stylesheet" href="assets/css/elephant.css?v=20261024c">
+<link rel="stylesheet" href="assets/css/blocks.css?v=20261024c">
 </head>
 <body>
 <div id="timebar" aria-hidden="true"></div>
@@ -26,6 +26,7 @@
   <button class="vfit" title="切换：整页 / 铺满宽度">整页</button>
   <button class="zout" title="缩小">－</button>
   <button class="zin" title="放大">＋</button>
+  <button class="rot" title="切换为竖屏视图（画布旋转 90°，竖屏下也能铺满屏宽）">竖屏</button>
   <button class="fs" title="全屏 (F)">全屏</button>
 </div>
 
@@ -63,8 +64,8 @@
       </svg>
     </div>
     <h2>建议横屏浏览</h2>
-    <p>本页为 16:9 演示画布，竖屏下文字会非常小。<br>旋转手机后体验最佳。</p>
-    <button class="rh-skip" type="button">仍要竖屏查看</button>
+    <p>本页为 16:9 演示画布，横屏体验最佳。<br>不开旋转锁定时，也可以直接竖屏查看（画布会自动旋转 90°）。</p>
+    <button class="rh-skip" type="button">竖屏查看</button>
   </div>
 </div>
 
@@ -79,18 +80,19 @@
       <tr><td><kbd>N</kbd></td><td>演讲者视图（讲稿 + 计时器）</td></tr>
       <tr><td><kbd>F</kbd></td><td>全屏</td></tr>
       <tr><td><kbd>B</kbd></td><td>黑屏</td></tr>
+      <tr><td><kbd>R</kbd></td><td>横屏 / 竖屏视图切换（竖屏时画布旋转 90°）</td></tr>
       <tr><td><kbd>Ctrl/Cmd</kbd>+<kbd>P</kbd></td><td>打印 / 导出 PDF（每页一张）</td></tr>
     </table>
   </div>
 </div>
 
-<script src="assets/js/slides-data.js?v=20261024b"></script>
-<script src="assets/js/machine.js?v=20261024b"></script>
-<script src="assets/js/elephant.js?v=20261024b"></script>
-<script src="assets/js/loupe.js?v=20261024b"></script>
-<script src="assets/js/blocks.js?v=20261024b"></script>
-<script src="assets/js/land-data.js?v=20261024b"></script>
-<script src="assets/js/globe.js?v=20261024b"></script>
-<script src="assets/js/deck.js?v=20261024b"></script>
+<script src="assets/js/slides-data.js?v=20261024c"></script>
+<script src="assets/js/machine.js?v=20261024c"></script>
+<script src="assets/js/elephant.js?v=20261024c"></script>
+<script src="assets/js/loupe.js?v=20261024c"></script>
+<script src="assets/js/blocks.js?v=20261024c"></script>
+<script src="assets/js/land-data.js?v=20261024c"></script>
+<script src="assets/js/globe.js?v=20261024c"></script>
+<script src="assets/js/deck.js?v=20261024c"></script>
 </body>
 </html>

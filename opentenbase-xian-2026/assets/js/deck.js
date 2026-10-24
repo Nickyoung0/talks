@@ -415,6 +415,7 @@
   let vmode = 'fit';          // 'fit' 整页等比 | 'fill' 铺满宽度（纵向可滚动）
   let zoom = 1;               // 额外倍率
   let curS = 1;
+  let rot = false;            // 竖屏视图：画布整体旋转 90°（外接框 720×1280）
 
   function vvSize() {
     const vv = window.visualViewport;     // iPhone 上避开 Safari 工具栏遮挡
@@ -422,8 +423,9 @@
   }
   function baseScale() {
     const { w, h } = vvSize();
-    if (vmode === 'fill') return w / W;   // 16:9 画布按宽度铺满，纵向滚动查看
-    return Math.min(w / W, h / H) * 0.985;
+    const bw = rot ? H : W, bh = rot ? W : H;   // 旋转后画布局部外接框互换
+    if (vmode === 'fill') return w / bw;        // 按宽度铺满，纵向滚动查看
+    return Math.min(w / bw, h / bh) * 0.985;
   }
   function applyScale(anchor) {
     const prev = curS;
@@ -433,10 +435,35 @@
     if (anchor && prev && wrapEl) {
       const r = wrapEl.getBoundingClientRect();
       const relX = anchor.x - r.left, relY = anchor.y - r.top;
-      const cx = (wrapEl.scrollLeft + relX) / prev, cy = (wrapEl.scrollTop + relY) / prev;
-      wrapEl.scrollLeft = cx * curS - relX;
-      wrapEl.scrollTop = cy * curS - relY;
+      if (rot) {
+        // 旋转后：屏内坐标 x' = s·(720 − y)，y' = s·x（x/y 为画布内坐标）
+        const cy = H - (wrapEl.scrollLeft + relX) / prev;
+        const cx = (wrapEl.scrollTop + relY) / prev;
+        wrapEl.scrollLeft = curS * (H - cy) - relX;
+        wrapEl.scrollTop = curS * cx - relY;
+      } else {
+        const cx = (wrapEl.scrollLeft + relX) / prev, cy = (wrapEl.scrollTop + relY) / prev;
+        wrapEl.scrollLeft = cx * curS - relX;
+        wrapEl.scrollTop = cy * curS - relY;
+      }
     }
+  }
+  /* 横屏 / 竖屏视图切换：竖屏视图旋转画布并铺满屏宽，同时收起旋转引导层 */
+  function setRot(v) {
+    rot = !!v;
+    document.body.classList.toggle('stage-rot', rot);
+    document.body.classList.toggle('force-portrait', rot);
+    if (rot && vmode === 'fit') vmode = 'fill';   // 竖屏视图默认铺满屏宽，最大化可读性
+    const btn = $('#hud .rot');
+    if (btn) {
+      btn.textContent = rot ? '横屏' : '竖屏';
+      btn.title = rot ? '切换为横屏视图' : '切换为竖屏视图（画布旋转 90°）';
+    }
+    zoom = 1;
+    applyScale();
+    if (wrapEl) { wrapEl.scrollTop = 0; wrapEl.scrollLeft = 0; }
+    const vf = $('#hud .vfit');
+    if (vf) vf.textContent = vmode === 'fit' ? '整页' : '铺满';
   }
   function fit(keepAnchor) {
     applyScale(keepAnchor ? { x: innerWidth / 2, y: innerHeight / 2 } : null);
@@ -444,7 +471,11 @@
     if (btn) btn.textContent = vmode === 'fit' ? '整页' : '铺满';
   }
   addEventListener('resize', () => fit(true));
-  addEventListener('orientationchange', () => setTimeout(() => fit(true), 80));
+  addEventListener('orientationchange', () => setTimeout(() => {
+    // 手机已真正转成横屏时，回到常规横屏视图（除非用户开着旋转锁定）
+    if (rot && innerWidth > innerHeight) setRot(false);
+    fit(true);
+  }, 80));
   if (window.visualViewport) visualViewport.addEventListener('resize', () => fit(true));
   fit();
 
@@ -453,6 +484,8 @@
   const zIn = $('#hud .zin'), zOut = $('#hud .zout'), vFitBtn = $('#hud .vfit');
   if (zIn) zIn.addEventListener('click', () => { zoom = clampZ(zoom * 1.25); applyScale({ x: innerWidth / 2, y: innerHeight / 2 }); });
   if (zOut) zOut.addEventListener('click', () => { zoom = clampZ(zoom / 1.25); applyScale({ x: innerWidth / 2, y: innerHeight / 2 }); });
+  const rotBtn = $('#hud .rot');
+  if (rotBtn) rotBtn.addEventListener('click', () => setRot(!rot));
   if (vFitBtn) vFitBtn.addEventListener('click', () => {
     vmode = vmode === 'fit' ? 'fill' : 'fit';
     zoom = 1;
@@ -672,6 +705,7 @@
       case 'n': case 'N': if (HAS_PRESENTER) togglePresenter(); break;
       case 'o': case 'O': ov.classList.toggle('open'); updateOverview(); break;
       case 'b': case 'B': document.body.classList.toggle('blank'); break;
+      case 'r': case 'R': setRot(!rot); break;
       case 'h': case 'H': case '?': help.classList.toggle('open'); break;
       case 'Escape':
         help.classList.remove('open'); ov.classList.remove('open');
@@ -694,6 +728,7 @@
   if (rh) {
     rh.querySelector('.rh-skip').addEventListener('click', () => {
       try { sessionStorage.setItem('rh-skip', '1'); } catch (_) {}
+      setRot(true);              // 直接切到竖屏视图（画布旋转 90° 铺满屏宽）
       fitRotate();
     });
     // 引导层出现时挡住翻页触摸/滚轮

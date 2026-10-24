@@ -23,12 +23,12 @@ echo "→ 递增资源版本号为 ?v=$V"
 LC_ALL=C sed -i.bak -E "s/\?v=[0-9A-Za-z]+/?v=$V/g" "$DST/index.html" && rm -f "$DST/index.html.bak"
 
 cd "$REPO"
-if git diff --quiet && git diff --cached --quiet; then
+git add -A
+if git diff --cached --quiet; then
   echo "· 内容无变化，跳过提交"
   exit 0
 fi
 
-git add -A
 git commit -m "$MSG"
 git push origin main
 echo "✅ 已推送：https://github.com/Nickyoung0/talks （Pages 约 1–3 分钟后生效）"

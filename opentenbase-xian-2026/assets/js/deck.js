@@ -110,7 +110,7 @@
           <div class="pf-deco" aria-hidden="true"><i></i><i></i><i></i></div>
           <div class="pf-name-row">
             <h3 class="pf-name">${esc(s.name)}</h3>
-            <span class="pf-name-en" aria-hidden="true">YANG XIANGBO</span>
+            ${s.name_en ? `<span class="pf-name-en" aria-hidden="true">${esc(s.name_en)}</span>` : ''}
           </div>
           <div class="pf-role">${esc(s.role)}</div>
           <ul class="pf-list">${s.creds.map(c => `<li>${esc(c)}</li>`).join('')}</ul>

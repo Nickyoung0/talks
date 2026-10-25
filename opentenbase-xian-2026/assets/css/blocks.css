@@ -109,6 +109,11 @@
 
 /* ---------------- 方案按钮 ---------------- */
 .bl-chips { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+
+/* 扩展 logo：TimescaleDB 老虎与 PostGIS 地球为官方素材，pgvector 为自绘示意标识 */
+.bl-logo { object-fit: contain; }
+.bl-logo-chip { width: 17px; height: 17px; border-radius: 4px; vertical-align: -3.5px; margin-left: 7px; }
+.bl-logo-pname { width: 23px; height: 23px; border-radius: 5px; vertical-align: -4.5px; margin-left: 9px; }
 .bl-chip, .bl-auto {
   font-family: var(--sans); font-size: 14px; font-weight: 600; color: #1c4f86;
   padding: 9px 16px; border-radius: 999px; cursor: pointer;

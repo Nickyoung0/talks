@@ -144,7 +144,7 @@ window.BlocksLab = (() => {
     root.innerHTML = `<div class="bl-main">
         <div class="bl-stage">${skeletonHTML(B)}</div>
         <div class="bl-chips">
-          ${plans.map((p, i) => `<button type="button" class="bl-chip" data-i="${i}">${esc(p.chip)}</button>`).join('')}
+          ${plans.map((p, i) => `<button type="button" class="bl-chip" data-i="${i}">${esc(p.chip)}${p.logo ? `<img class="bl-logo bl-logo-chip" src="${p.logo}" alt="">` : ''}</button>`).join('')}
           <button type="button" class="bl-auto">自动巡演</button>
         </div>
       </div>` + sideHTML(slide, B);
@@ -180,7 +180,7 @@ window.BlocksLab = (() => {
     }
 
     function paint(plan) {
-      pName.textContent = plan.name || '';
+      pName.innerHTML = esc(plan.name || '') + (plan.logo ? `<img class="bl-logo bl-logo-pname" src="${plan.logo}" alt="">` : '');
       pDesc.textContent = plan.desc || '';
       kindsEl.innerHTML = kindBadges(plan);
       chips.forEach((c, i) => c.classList.toggle('on', i === cur));

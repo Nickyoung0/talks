@@ -1,12 +1,12 @@
 # OpenTenBase 城市行 · 西安站 —— 网页演示工程
 
-一个零依赖、可移植的动态 PPT：把备课材料编译成分页幻灯片，支持键盘翻页、分步揭示、SVG 逻辑图动画、**互动主板可视化（把 PostgreSQL 内核画成一台可拆装的电脑）**、总览网格、演讲者视图（讲稿 + 计时器）、黑屏、深链跳页和打印导出 PDF。
+一个零依赖、可移植的动态 PPT：把备课材料编译成分页幻灯片，支持键盘翻页、分步揭示、SVG 逻辑图动画、**互动主板可视化（把 PostgreSQL 内核画成一台可拆装的电脑）**、总览网格、黑屏、深链跳页和打印导出 PDF（每页一张，讲稿已全篇移除）。
 
 ## 快速使用
 
 1. **直接双击打开 `index.html`**（`file://` 即可，无需服务器）；
 2. 或在本目录运行 `python3 -m http.server 8080`，访问 http://localhost:8080；
-3. 按 `H` 查看全部快捷键；按 `N` 打开演讲者视图；按 `O` 打开总览。
+3. 按 `H` 查看全部快捷键；按 `O` 打开总览。
 
 ## 互动机器页（第 02 章）
 
@@ -17,7 +17,7 @@
 - **开机时序**（preload 时机之后）：进入页面时机器断电，按 `→` 逐步播放八步开机时序（断电 → 通电 → 定内存 → 开机插卡 → 自带进程 → 热插拔 → 登记 → 运行），板卡有插入动画；也可直接点击右侧步骤跳转；走完最后一步再按 `→` 才翻页。
 - 文案在 `tools/content/content_machine.py` 中维护（部件与步骤都是数据），布局与交互在 `assets/js/machine.js` + `assets/css/machine.css`。
 
-## 目录页大象入场（第 2 页）
+## 目录页大象入场（第 3 页）
 
 封面翻页后，一头**分层 CSS 3D 的大象**背着行囊从远处走来：象身拆成尾巴 / 远侧腿 / 躯干 / 近侧腿 / 背囊 / 象头六个图层，每层不同 `translateZ`，走近时按透视产生真实视差，相机叠加 dolly + 转身，站定后持续左右微摆保持立体感；行囊开盖后五个扩展（pgvector / PostGIS / TimescaleDB / FDW / pg_stat_statements）沿 Z 轴朝观众弹出漂浮，随后整体淡出、目录卡片淡入。演讲者提前按 `→` 可立即收尾（`.rush`）。样式在 `assets/css/elephant.css`，图形在 `assets/js/elephant.js`，工具数据在 `tools/content/content_elephant.py`。
 
@@ -29,7 +29,7 @@
 | `←` / `PgUp` | 上一页（回看时显示全部要点） |
 | `数字` + `回车` | 跳转到指定页 |
 | `O` | 总览网格 |
-| `N` | 演讲者视图（讲稿 + 技术展开 + 计时器） |
+| `R` | 横屏 / 竖屏视图切换（竖屏时画布旋转 90°） |
 | `F` | 全屏 |
 | `B` | 黑屏 |
 | `Ctrl/Cmd + P` | 打印 / 导出 PDF（每页一张，1280×720） |
@@ -49,7 +49,7 @@ assets/img/                模版提取的 Logo 与两张内容配图
 assets/files/hello_pg.zip  现场实践源码包（页内可下载）
 tools/build_slides_data.py 数据生成器（顶部 EVENT 为可编辑活动信息）
 tools/content/             备课内容源模块（生成器的输入）
-tools/check_deck.cjs       Playwright 自动化验收脚本（可选）：逐条打印 26 项断言
+tools/check_deck.cjs       Playwright 自动化验收脚本（可选）：逐条打印 44 项断言
                            `cd tools && node check_deck.cjs`
 tools/shot_machine.cjs     机器页截图脚本（开发用，可选）
 ```

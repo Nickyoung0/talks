@@ -223,6 +223,8 @@ window.BlocksLab = (() => {
       activate() { if (cur < 0) select(0); startAuto(); },
       advance() { return false; },   // 不拦截翻页，交互全部交给点击
       stop() { stopAuto(); },
+      /* 打印/导 PDF：把第一个建筑即时搭好并停掉巡演，纸上不留空地基 */
+      printReady() { if (cur < 0) select(0, true); stopAuto(); },
     };
   }
 

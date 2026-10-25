@@ -404,6 +404,11 @@
   fitDiagramText(stage);
   buildGalleries(stage);
 
+  // 打印/导 PDF：积木页平时不预搭（保留入场动画），出纸前把建筑即时搭好
+  addEventListener('beforeprint', () => {
+    blocks.forEach(b => { try { b.printReady && b.printReady(); } catch (_) {} });
+  });
+
   // 图片放大镜（第 9 页生态图）：指针移到图上局部放大
   if (window.Loupe) window.Loupe.mount(stage);
 

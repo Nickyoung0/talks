@@ -1277,3 +1277,52 @@ body.portrait-phone.force-portrait #rotate-hint { display: none; }
 @media (hover: none) and (pointer: coarse) {
   .gal-tab { font-size: 15px; padding: 9px 16px; }
 }
+
+/* ============================================================
+   打印 / 导出 PDF（每页一张）
+   屏幕上是 37 张幻灯片叠在同一个 1280×720 画布里（靠 opacity 切换），
+   直接 Ctrl+P 只会打出一张重叠的糊页。这里在打印媒介下把幻灯片
+   「摊平」成纵向文档流，每页一张，并去掉所有屏幕专用外壳。
+   仅在 @media print 生效，对屏幕渲染零影响。
+   ============================================================ */
+@page { size: 1280px 720px; margin: 0; }
+@media print {
+  html, body {
+    height: auto; width: 1280px; overflow: visible;
+    background: #fff;                     /* 去掉深色舞台底，省墨且对比清楚 */
+  }
+  /* 屏幕外壳一律不出纸 */
+  #timebar, #hud, #overview, #presenter, #help,
+  #video-modal, #rotate-hint { display: none !important; }
+
+  /* 舞台还原成普通文档流：解除缩放、固定定位与滚动容器 */
+  #stage-wrap {
+    position: static; display: block; overflow: visible;
+    inset: auto; transform: none;
+  }
+  #stage-size { width: 1280px; height: auto; margin: 0; }
+  #stage {
+    position: static; width: 1280px; height: auto;
+    transform: none !important; overflow: visible;
+    box-shadow: none; border-radius: 0; background: #fff;
+  }
+  /* 幻灯片摊平：每张独占一页 */
+  .slide {
+    position: relative; inset: auto;
+    width: 1280px; height: 720px;
+    opacity: 1 !important; visibility: visible !important;
+    transform: none !important; filter: none !important;
+    animation: none !important; transition: none !important;
+    break-after: page; page-break-after: always;   /* 后者为旧引擎兜底 */
+    overflow: hidden;
+  }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  /* 分步揭示的内容在纸上一次性给全 */
+  .frag {
+    opacity: 1 !important; visibility: visible !important;
+    transform: none !important; filter: none !important;
+    transition: none !important;
+  }
+  /* 图集：纸上只印当前选中的那一张，避免撑破版面（切标签后再打可换图） */
+  .gal-tabs { display: none !important; }
+}

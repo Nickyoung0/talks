@@ -1,6 +1,7 @@
 /* 封面右上角地球：真实球面自转（canvas 2D，零依赖，file:// 可用）
    画面构成：
-   1) 大陆板块由更小更密的点阵刻出来（陆地点取自 Natural Earth 110m 陆地轮廓判定）；
+   1) 大陆板块由更小更密的点阵刻出来（陆地点取自 Natural Earth 50m 陆地轮廓判定），
+      并用同一份轮廓描出海岸线，板块边界清晰；
    2) 海面圆点铺在测地格点上（正二十面体 Class I 细分），沿三个方向各自排成直线，
       同方向的相邻圆点连成一条连续的细虚线，整张网随地球一起转，只画正面可见的段；
    3) 经纬线随自转一起移动，是“球在转”最直接的线索；
@@ -12,11 +13,11 @@
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 
   /* Fibonacci 球面分布：等面积铺点，不会往两极堆；
-     加半个格距内的随机抖动，打散螺旋纹理（只用于大陆点阵，网格不用它） */
-  function spherePoints(n) {
+     加小幅度随机抖动打散螺旋纹理（只用于大陆点阵，网格不用它） */
+  function spherePoints(n, jitScale) {
     const pts = new Array(n);
     const ga = Math.PI * (3 - Math.sqrt(5));
-    const jit = Math.PI / Math.sqrt(n);          // 约半个格距
+    const jit = (Math.PI / Math.sqrt(n)) * (jitScale || 1);   // 约半个格距
     for (let i = 0; i < n; i++) {
       const sy = 1 - (2 * i + 1) / n;
       const lat = Math.asin(clamp(sy, -1, 1)) + (Math.random() - 0.5) * jit;
@@ -187,7 +188,8 @@
         tilt: -0.34, roll: -0.28,           // 极轴倾斜 + 画面内倾角
         freq: 9,                            // 测地细分密度：格点数 = 10·freq² + 2
         seaR: 1.7, seaAlpha: 0.30,
-        landSample: 32000, landR: 1.05, landAlpha: 1.0,
+        landSample: 100000, landR: 0.95, landAlpha: 1.0,
+        coastA: 0.34, coastB: 0.15,         // 海岸线两档亮度（正面亮 / 边缘暗）
         meridians: 10, parallels: 6,
         meshAlpha: [0.09, 0.14, 0.19, 0.25, 0.33],   // 虚线按深度分五档，边缘淡出
         speed: 0.0030,                      // 弧度/帧（16.7ms），约 35 秒转一圈
@@ -218,6 +220,16 @@
         }
       });
 
+      /* 海岸线顶点预算成单位向量三元组，每帧只做投影 */
+      const coast = rings.map(r => {
+        const a = new Float64Array(r.n * 3);
+        for (let i = 0; i < r.n; i++) {
+          const v = vec((r.f[2 * i + 1] * Math.PI) / 180, (r.f[2 * i] * Math.PI) / 180);
+          a[3 * i] = v.x; a[3 * i + 1] = v.y; a[3 * i + 2] = v.z;
+        }
+        return a;
+      });
+
       /* 直线：整张网先串成一条条线，再按大陆把线断开（大陆上不连线） */
       let lines = [];
       let segs = 0;
@@ -238,13 +250,16 @@
         if (!raf) draw();
       }, 0);
       let seaProj = null;                    // 每帧的海点投影缓存（网格与圆点共用）
+      let landProj = new Float32Array(0);    // 每帧的陆地点投影缓存
 
-      /* 大陆点阵：判定 3.2 万个点约一两百毫秒，放到首帧之后异步做 */
+      /* 大陆点阵：判定 10 万个点约零点几秒，放到首帧之后异步做；
+         手机屏小，密度按宽度降一档，保帧率 */
       const land = [];
       let landReady = false;
       setTimeout(() => {
         if (!rings.length || landReady) return;
-        spherePoints(S.landSample).forEach(p => {
+        const n = W > 0 && W < 620 ? Math.round(S.landSample * 0.6) : S.landSample;
+        spherePoints(n, 0.5).forEach(p => {
           /* 这里拿到的是 {lat, lon}（弧度），不是单位向量，换算不能走 lonDeg/latDeg */
           let lon = (p.lon * 180) / Math.PI;
           if (lon > 180) lon -= 360;
@@ -389,16 +404,51 @@
           ctx.beginPath(); ctx.arc(seaProj[3 * i], seaProj[3 * i + 1], S.seaR * (0.5 + 0.6 * z), 0, TAU); ctx.fill();
         }
 
-        /* 陆地：更小更密的点，把大陆板块刻出来 */
+        /* 陆地：更小更密的点，把大陆板块刻出来（内联投影 + fillRect，几万点也能稳 60fps） */
+        if (landProj.length !== land.length * 3) landProj = new Float32Array(land.length * 3);
         ctx.fillStyle = '#eaf4ff';
-        for (const v of land) {
-          const q = px(v);
-          if (q.z <= 0.02) continue;
-          const lit = clamp(0.5 + 0.5 * (q.z * 0.62 - q.x * 0.26 - q.y * 0.30), 0.38, 1);
-          ctx.globalAlpha = S.landAlpha * Math.pow(q.z, 0.65) * (0.62 + 0.38 * lit);
-          ctx.beginPath(); ctx.arc(q.x, q.y, S.landR * (0.55 + 0.55 * q.z), 0, TAU); ctx.fill();
+        for (let i = 0; i < land.length; i++) {
+          const v = land[i];
+          const x1 = v.x * cs + v.z * ss, z1 = -v.x * ss + v.z * cs;
+          const z = m32 * v.y + m33 * z1;
+          if (z <= 0.02) continue;
+          const X = cx + R * (m11 * x1 + m12 * v.y + m13 * z1);
+          const Y = cy + R * (m21 * x1 + m22 * v.y + m23 * z1);
+          landProj[3 * i] = X; landProj[3 * i + 1] = Y; landProj[3 * i + 2] = z;
+          const lit = clamp(0.5 + 0.5 * (z * 0.62 - ((X - cx) / R) * 0.26 - ((Y - cy) / R) * 0.30), 0.38, 1);
+          ctx.globalAlpha = S.landAlpha * Math.pow(z, 0.65) * (0.62 + 0.38 * lit);
+          const r = S.landR * (0.55 + 0.55 * z);
+          ctx.fillRect(X - r, Y - r, 2 * r, 2 * r);
         }
         ctx.globalAlpha = 1;
+
+        /* 海岸线：同一份轮廓描边，板块边界一眼可辨（正面亮、边缘暗两档） */
+        if (coast.length && S.coastA > 0) {
+          const pa = new Path2D(), pb = new Path2D();
+          for (const rp of coast) {
+            let openA = false, openB = false;
+            for (let i = 0; i < rp.length; i += 3) {
+              const x = rp[i], y = rp[i + 1], zv = rp[i + 2];
+              const x1 = x * cs + zv * ss, z1 = -x * ss + zv * cs;
+              const z = m32 * y + m33 * z1;
+              if (z <= 0.02) { openA = openB = false; continue; }
+              const X = cx + R * (m11 * x1 + m12 * y + m13 * z1);
+              const Y = cy + R * (m21 * x1 + m22 * y + m23 * z1);
+              if (z > 0.45) {                       // 正面：亮档
+                if (!openA) { pa.moveTo(X, Y); openA = true; openB = false; }
+                pa.lineTo(X, Y);
+              } else {                              // 边缘：暗档
+                if (!openB) { pb.moveTo(X, Y); openB = true; openA = false; }
+                pb.lineTo(X, Y);
+              }
+            }
+          }
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = '#cfe6ff';
+          ctx.globalAlpha = S.coastA; ctx.stroke(pa);
+          ctx.globalAlpha = S.coastB; ctx.stroke(pb);
+          ctx.globalAlpha = 1;
+        }
 
         /* 球体轮廓 */
         ctx.strokeStyle = 'rgba(255,255,255,.14)';

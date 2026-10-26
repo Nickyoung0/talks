@@ -65,6 +65,7 @@ tools/gen_land_data.js     底图生成器：TopoJSON → 分层环 → 抽稀 �
 tools/verify_geo.js        地理核验：105 项断言（改底图数据后必跑）
 tools/verify_proj.js       投影朝向核验：14 项断言（改 globe.js 投影/姿态后必跑）
 tools/dump_proj_svg.js     导出当前投影海岸线+城市标注 SVG（人工复核用）
+tools/annotate_cover.cjs   证据包：独立 Snyder 正交投影标注叠加真实封面渲染 + 逐点交叉验证
 tools/check_deck.cjs       Playwright 自动化验收脚本（可选）：逐条打印 44 项断言
                            `cd tools && node check_deck.cjs`
 tools/shot_machine.cjs     机器页截图脚本（开发用，可选）

@@ -157,7 +157,7 @@
 
       const S = {
         cx: 0.545, cy: 0.545, R: 0.40,      // 圆心跳到容器右下，让地球大部分落在画面内
-        tilt: -0.34, roll: -0.28,           // 极轴倾斜 + 画面内倾角
+        tilt: 0.34, roll: -0.28,            // 极轴倾斜（正值让北半球朝向观察者）+ 画面内倾角
         freq: 9,                            // 测地细分密度：格点数 = 10·freq² + 2
         seaR: 1.7, seaAlpha: 0.30,
         /* 陆地刻意做成「稀疏的柔光点」而不是铺满的密集硬点：
@@ -306,12 +306,14 @@
         const cs = Math.cos(spin), ss = Math.sin(spin);
         ctx.clearRect(0, 0, W, H);
 
-        /* 单位向量 → 屏幕（先绕地轴自转 spin，再套固定姿态矩阵） */
+        /* 单位向量 → 屏幕（先绕地轴自转 spin，再套固定姿态矩阵）。
+           屏幕约定：相机在 +z 外侧看向原点，canvas 的 y 轴向下。
+           3D 的 +x 需映射到屏幕左（否则东经方向左右镜像）、+y（北极）映射到屏幕上（否则上下颠倒）。 */
         const px = v => {
           const x1 = v.x * cs + v.z * ss, z1 = -v.x * ss + v.z * cs;
           return {
-            x: cx + R * (m11 * x1 + m12 * v.y + m13 * z1),
-            y: cy + R * (m21 * x1 + m22 * v.y + m23 * z1),
+            x: cx - R * (m11 * x1 + m12 * v.y + m13 * z1),
+            y: cy - R * (m21 * x1 + m22 * v.y + m23 * z1),
             z: m32 * v.y + m33 * z1,
           };
         };
@@ -466,8 +468,10 @@
         if (!last) last = ts;
         const dt = Math.min(64, ts - last);
         last = ts;
-        spin += S.speed * (dt / 16.7);
+        /* 自西向东自转：正面中心经度随时间向西移动，spin 递减 */
+        spin -= S.speed * (dt / 16.7);
         if (spin > TAU) spin -= TAU;
+        if (spin < 0) spin += TAU;
         flow += S.flow * (dt / 1000);
         draw();
       }
@@ -484,7 +488,7 @@
         activate() { resize(); draw(); start(); },
         stop() { stop(); },
         /* 手动推进 sec 秒（导出静帧与自动化验收用） */
-        step(sec) { spin += S.speed * 60 * (sec || 1); flow += S.flow * (sec || 1); if (spin > TAU) spin -= TAU; draw(); },
+        step(sec) { spin -= S.speed * 60 * (sec || 1); flow += S.flow * (sec || 1); if (spin > TAU) spin -= TAU; if (spin < 0) spin += TAU; draw(); },
         setSpin(x) { spin = x; draw(); },
         stats() { return { land: land.length, sea: sea.length, lines: lines.length, segs: segs }; },
       };

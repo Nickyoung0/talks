@@ -13,8 +13,9 @@
 封面右上角是一个 canvas 绘制的点阵地球：测地网格为海，稀疏柔光点为陆，海岸线用虚线（正面亮、边缘暗两档）。**底图数据来自 Natural Earth 1:10m**（经 world-atlas TopoJSON 封装），生成管线在 `tools/gen_land_data.js`：解码多边形 → 分层处理**外环 / 洞（里海）/ 湖面 / 湖中岛**四类环 → Douglas-Peucker 抽稀 → 跨 ±180° 日界线的环整体平移到连续经度区间。
 
 - 判定逻辑单独抽在 `assets/js/land-hit.js`，`globe.js` 画图、`tools/verify_geo.js` 核验共用同一份，杜绝"画的和验的不是一套"。判定用**球面射线法**（沿经线向北到北极，按 1° 经度分槽索引边）——平面射线法对横跨全球经度的环（欧亚、南极洲）会系统性出错（曾把西伯利亚北部 66–68°N 整片判成海），球面算法天然处理跨日界线的边。南极极冠由数据源截断纬度（`LAND_ANTARCTIC`，约 -85.2°）补回。
-- **地理核验**：`node tools/verify_geo.js` 跑 100 项断言 —— 中国主要城市与台北/香港/海口、七大洲主要城市、主要湖泊（里海/贝加尔/五大湖等）、台湾/海南球面面积偏差（<±2%）、全球陆海占比、逐 0.5° 纬线扫描防跨日界线连片误判。改任何底图数据后必须重跑。
-- 微调观感改 `assets/js/globe.js` 顶部 `S`：`landSample`（点数）、`landSpread`（光斑大小）、`coastDash`（虚线，`null` 回实线）、`coastA/coastB`（轮廓亮度）。
+- **地理核验**：`node tools/verify_geo.js` 跑 105 项断言 —— 中国主要城市与台北/香港/海口、七大洲主要城市、主要湖泊（里海/贝加尔/五大湖等）、台湾/海南球面面积偏差（<±2%）、全球陆海占比、逐 0.5° 纬线扫描防跨日界线连片误判。改任何底图数据后必须重跑。
+- **投影朝向核验**：`node tools/verify_proj.js` 跑 14 项断言，专查"画出来的地球是否上下颠倒 / 左右镜像 / 自转方向"——北极必须在球体上半部且朝向观察者、可见半球以陆地为多的北半球为主、东京须在北京以东等相对方位全部正确（曾发现投影把地球画成南极朝上且东西镜像，已修复并纳入回归）。`node tools/dump_proj_svg.js /tmp/out.svg [spin度数]` 可把当前投影下的海岸线连同城市标注导出成 SVG 供人工复核。改 `globe.js` 投影/姿态后两项都要跑。
+- 微调观感改 `assets/js/globe.js` 顶部 `S`：`landSample`（点数）、`landSpread`（光斑大小）、`coastDash`（虚线，`null` 回实线）、`coastA/coastB`（轮廓亮度）。`tilt` 用正值（北半球朝向观察者）；自转为自西向东（spin 递减）。
 
 ## 互动机器页（第 02 章）
 
@@ -61,7 +62,9 @@ assets/files/hello_pg.zip  现场实践源码包（页内可下载）
 tools/build_slides_data.py 数据生成器（顶部 EVENT 为可编辑活动信息）
 tools/content/             备课内容源模块（生成器的输入）
 tools/gen_land_data.js     底图生成器：TopoJSON → 分层环 → 抽稀 → 日界线平移
-tools/verify_geo.js        地理核验：100 项断言（改底图数据后必跑）
+tools/verify_geo.js        地理核验：105 项断言（改底图数据后必跑）
+tools/verify_proj.js       投影朝向核验：14 项断言（改 globe.js 投影/姿态后必跑）
+tools/dump_proj_svg.js     导出当前投影海岸线+城市标注 SVG（人工复核用）
 tools/check_deck.cjs       Playwright 自动化验收脚本（可选）：逐条打印 44 项断言
                            `cd tools && node check_deck.cjs`
 tools/shot_machine.cjs     机器页截图脚本（开发用，可选）

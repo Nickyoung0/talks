@@ -1046,7 +1046,7 @@ body.blank { background: #000; }
 }
 .cvo-title {
   font-family: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Noto Sans SC", sans-serif;
-  font-size: 72px;                    /* PPT 54 号 */
+  font-size: 72px;                    /* 微软雅黑 54 号：舞台 1280px = 幻灯片 960pt，1pt = 4/3px */
   font-weight: 700; color: #fff;
   text-align: center; line-height: 1.42;
   max-width: 1010px; letter-spacing: 1px;

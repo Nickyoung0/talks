@@ -271,6 +271,16 @@
         if (!raf) draw();
       }, 60);
 
+      /* 重要岛屿（key-islands.js）：钓鱼岛及附属岛屿、台湾附属岛屿、南海诸岛等。
+         它们在整球尺度下远小于 1px，海岸线抽稀和随机撒点都会丢掉，这里固定画点，
+         保证版图完整。和陆地光点用同一个精灵，只是最低亮度有保底，避免被淡化到看不见。 */
+      const keyIsles = (window.KEY_ISLANDS || []).map(k =>
+        vec((k.lat * Math.PI) / 180, (k.lon * Math.PI) / 180));
+      /* 核验对照开关（仅 tools/verify_territory.cjs 使用）：临时不画岛屿点，
+         用来证明渲染里的岛位亮点确实来自岛屿点。默认画。 */
+      let islesOff = false;
+      window.__globeIslesOff = v => { islesOff = !!v; draw(); };
+
       /* 经纬线采样点 */
       const meridians = [], parallels = [];
       for (let m = 0; m < S.meridians; m++) {
@@ -420,6 +430,18 @@
           /* 用 pow(z,0.5) 而非 0.65：边缘的点本就更淡，柔光斑再淡就看不到了 */
           ctx.globalAlpha = S.landAlpha * Math.pow(z, 0.5) * (0.62 + 0.38 * lit);
           const r = S.landR * S.landSpread * (0.6 + 0.5 * z);
+          ctx.drawImage(dot, X - r, Y - r, 2 * r, 2 * r);
+        }
+        /* 重要岛屿：每个岛固定一个光点（投影与陆地点同一套符号：cx - R*、cy - R*） */
+        for (let i = 0; !islesOff && i < keyIsles.length; i++) {
+          const v = keyIsles[i];
+          const x1 = v.x * cs + v.z * ss, z1 = -v.x * ss + v.z * cs;
+          const z = m32 * v.y + m33 * z1;
+          if (z <= 0.02) continue;
+          const X = cx - R * (m11 * x1 + m12 * v.y + m13 * z1);
+          const Y = cy - R * (m21 * x1 + m22 * v.y + m23 * z1);
+          ctx.globalAlpha = Math.max(0.55, S.landAlpha * Math.pow(z, 0.5));
+          const r = S.landR * S.landSpread * (0.55 + 0.4 * z);
           ctx.drawImage(dot, X - r, Y - r, 2 * r, 2 * r);
         }
         ctx.globalAlpha = 1;

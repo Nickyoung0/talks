@@ -1033,10 +1033,16 @@ body.blank { background: #000; }
 }
 
 /* 主内容：全部居中 */
+/* 版图红线：标题区上缘固定（flex-start + padding-top），不再垂直居中。
+   封面地球自转一整圈，南海诸岛、钓鱼岛等重要岛屿在画面里扫过的区域最低到 y≈203px
+   （tools/verify_territory.cjs 实算包络）。《公开地图内容表示规范》第五条（三）：
+   不得压盖重要岛屿。原居中布局下标题第一行在 y 128–228，约 1/4 转角压住南沙群岛。
+   上缘锚定后，换字体、换行数都只会让标题向下长，永远不会向上碰到岛屿。
+   改这里的 padding-top / 标题字号 / 地球位置后，必须跑 verify_territory.cjs。 */
 .cvo-main {
   position: relative; z-index: 1; flex: 1;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding-bottom: 46px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding-top: 190px; padding-bottom: 0;
 }
 .cvo-title {
   font-family: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Noto Sans SC", sans-serif;
@@ -1044,9 +1050,10 @@ body.blank { background: #000; }
   font-weight: 700; color: #fff;
   text-align: center; line-height: 1.42;
   max-width: 1010px; letter-spacing: 1px;
+  word-break: keep-all;               /* 中文词不拆行：会场电脑换成雅黑等字体时也不会出现“的设 / 计哲学” */
   text-shadow: 0 5px 28px rgba(3, 14, 82, .5);
 }
-.cvo-dots { display: flex; gap: 11px; margin: 36px 0 30px; }
+.cvo-dots { display: flex; gap: 11px; margin: 26px 0 22px; }
 .cvo-dots i {
   width: 13px; height: 13px; border-radius: 3px; background: #fff;
   box-shadow: 0 0 10px rgba(255, 255, 255, .5);
@@ -1057,7 +1064,7 @@ body.blank { background: #000; }
   font-weight: 500; letter-spacing: 2.5px; color: rgba(255, 255, 255, .96);
 }
 .cvo-speaker {
-  margin-top: 48px; display: inline-flex; align-items: stretch;
+  margin-top: 36px; display: inline-flex; align-items: stretch;
   background: #fff; border-radius: 10px; padding: 5px;
   box-shadow: 0 16px 38px -16px rgba(2, 10, 64, .7);
 }

@@ -414,8 +414,8 @@
           const x1 = v.x * cs + v.z * ss, z1 = -v.x * ss + v.z * cs;
           const z = m32 * v.y + m33 * z1;
           if (z <= 0.02) continue;
-          const X = cx + R * (m11 * x1 + m12 * v.y + m13 * z1);
-          const Y = cy + R * (m21 * x1 + m22 * v.y + m23 * z1);
+          const X = cx - R * (m11 * x1 + m12 * v.y + m13 * z1);
+          const Y = cy - R * (m21 * x1 + m22 * v.y + m23 * z1);
           const lit = clamp(0.5 + 0.5 * (z * 0.62 - ((X - cx) / R) * 0.26 - ((Y - cy) / R) * 0.30), 0.38, 1);
           /* 用 pow(z,0.5) 而非 0.65：边缘的点本就更淡，柔光斑再淡就看不到了 */
           ctx.globalAlpha = S.landAlpha * Math.pow(z, 0.5) * (0.62 + 0.38 * lit);
@@ -435,8 +435,8 @@
               const x1 = x * cs + zv * ss, z1 = -x * ss + zv * cs;
               const z = m32 * y + m33 * z1;
               if (z <= 0.02) { openA = openB = false; continue; }
-              const X = cx + R * (m11 * x1 + m12 * y + m13 * z1);
-              const Y = cy + R * (m21 * x1 + m22 * y + m23 * z1);
+              const X = cx - R * (m11 * x1 + m12 * y + m13 * z1);
+              const Y = cy - R * (m21 * x1 + m22 * y + m23 * z1);
               if (z > 0.45) {                       // 正面：亮档
                 if (!openA) { pa.moveTo(X, Y); openA = true; openB = false; }
                 pa.lineTo(X, Y);

@@ -38,36 +38,7 @@
     return { x: x / l, y: y / l, z: z / l };
   };
 
-  /* 陆地轮廓：扁平数组 [lon,lat,...] → 带 bbox 的环 */
-  function prepRings() {
-    const src = window.LAND_RINGS || [];
-    return src.map(f => {
-      let minx = 1e9, maxx = -1e9, miny = 1e9, maxy = -1e9;
-      for (let i = 0; i < f.length; i += 2) {
-        const x = f[i], y = f[i + 1];
-        if (x < minx) minx = x; if (x > maxx) maxx = x;
-        if (y < miny) miny = y; if (y > maxy) maxy = y;
-      }
-      return { f, minx, maxx, miny, maxy, n: f.length >> 1 };
-    });
-  }
-
-  /* 射线法判定点是否落在陆地环内 */
-  function inLand(rings, lon, lat) {
-    for (let k = 0; k < rings.length; k++) {
-      const r = rings[k];
-      if (lon < r.minx || lon > r.maxx || lat < r.miny || lat > r.maxy) continue;
-      let inside = false;
-      const f = r.f, n = r.n;
-      for (let i = 0, j = n - 1; i < n; j = i++) {
-        const xi = f[2 * i], yi = f[2 * i + 1];
-        const xj = f[2 * j], yj = f[2 * j + 1];
-        if ((yi > lat) !== (yj > lat) && lon < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside;
-      }
-      if (inside) return true;
-    }
-    return false;
-  }
+  /* 海陆判定不在这里写：逻辑在 land-hit.js，绘制与校验共用同一份，避免两边漂移 */
 
   /* ---- 测地格点：正二十面体 Class I 细分 --------------------------------
      每个三角面按重心坐标细分成 freq 份再投影到球面。这样格点沿三个方向各自排在
@@ -196,7 +167,8 @@
         landSample: 22000, landR: 1.05, landAlpha: 1.0,
         landSpread: 3.1,                    // 光斑外缘半径 = landR × 该倍数
         coastA: 0.46, coastB: 0.21,         // 海岸线两档亮度（正面亮 / 边缘暗）
-        coastDash: [2.3, 2.0],              // 海岸线虚线（实长, 空长），null 为实线
+        coastDash: [2.3, 2.0],              // 岸线虚线（实长, 空长），null 为实线
+        inlandA: 0.30, inlandB: 0.13,       // 内陆水体（里海、湖）岸线：比海岸淡一档
         meridians: 10, parallels: 6,
         meshAlpha: [0.09, 0.14, 0.19, 0.25, 0.33],   // 虚线按深度分五档，边缘淡出
         speed: 0.0030,                      // 弧度/帧（16.7ms），约 35 秒转一圈
@@ -210,25 +182,28 @@
       const m21 = sinR, m22 = cosT * cosR, m23 = -sinT * cosR;
       const m32 = sinT, m33 = cosT;
 
-      /* 点云预算：只存单位向量，每帧纯矩阵乘加。
-         注意格点的经度是 0..360°，陆地数据是 -180..180°，判定时要对齐区间 */
-      const rings = prepRings();
+      /* 底图四类环：陆地外环、陆地内环（里海这类洞）、湖面、湖中岛。
+         判定走 land-hit.js；格点的经度由 lonDeg 归一到 -180..180，与底图同一区间。 */
+      const G = window.LandHit.groups();
+      const hasLand = G.land.rings.length > 0;
+      const isLand = (lon, lat) => window.LandHit.isLand(lon, lat);
       const lonDeg = v => { const d = (Math.atan2(v.z, v.x) * 180) / Math.PI; return d > 180 ? d - 360 : d; };
       const latDeg = v => (Math.asin(clamp(v.y, -1, 1)) * 180) / Math.PI;
 
-      /* 测地格点里落在海上的那些，才是网格的圆点；大陆留给稀疏的柔光点 */
+      /* 测地格点里落在水上的那些，才是网格的圆点；大陆留给稀疏的柔光点 */
       const geo = geodesic(S.freq);
       const sea = [];
       const seaOf = new Int32Array(geo.verts.length).fill(-1);
       geo.verts.forEach((v, i) => {
-        if (!rings.length || !inLand(rings, lonDeg(v), latDeg(v))) {
+        if (!isLand(lonDeg(v), latDeg(v))) {
           seaOf[i] = sea.length;
           sea.push(v);
         }
       });
 
-      /* 海岸线顶点预算成单位向量三元组，每帧只做投影 */
-      const coast = rings.map(r => {
+      /* 岸线顶点预算成单位向量三元组，每帧只做投影。
+         海岸线和内陆水体岸线分开存：后者（里海、湖）画得更淡，别跟海岸混淆。 */
+      const bake = rs => rs.map(r => {
         const a = new Float64Array(r.n * 3);
         for (let i = 0; i < r.n; i++) {
           const v = vec((r.f[2 * i + 1] * Math.PI) / 180, (r.f[2 * i] * Math.PI) / 180);
@@ -236,6 +211,8 @@
         }
         return a;
       });
+      const coast = bake(G.land.rings);
+      const inland = bake(G.hole.rings.concat(G.lake.rings));
 
       /* 直线：整张网先串成一条条线，再按大陆把线断开（大陆上不连线） */
       let lines = [];
@@ -282,13 +259,13 @@
       const land = [];
       let landReady = false;
       setTimeout(() => {
-        if (!rings.length || landReady) return;
+        if (!hasLand || landReady) return;
         const n = W > 0 && W < 620 ? Math.round(S.landSample * 0.6) : S.landSample;
         spherePoints(n, 0.5).forEach(p => {
           /* 这里拿到的是 {lat, lon}（弧度），不是单位向量，换算不能走 lonDeg/latDeg */
           let lon = (p.lon * 180) / Math.PI;
           if (lon > 180) lon -= 360;
-          if (inLand(rings, lon, (p.lat * 180) / Math.PI)) land.push(vec(p.lat, p.lon));
+          if (isLand(lon, (p.lat * 180) / Math.PI)) land.push(vec(p.lat, p.lon));
         });
         landReady = true;
         if (!raf) draw();
@@ -445,10 +422,11 @@
         }
         ctx.globalAlpha = 1;
 
-        /* 海岸线：同一份轮廓描边，板块边界一眼可辨（正面亮、边缘暗两档） */
-        if (coast.length && S.coastA > 0) {
+        /* 岸线：同一份轮廓描边，板块边界一眼可辨（正面亮、边缘暗两档） */
+        const shore = (list, aA, aB) => {
+          if (!list.length || aA <= 0) return;
           const pa = new Path2D(), pb = new Path2D();
-          for (const rp of coast) {
+          for (const rp of list) {
             let openA = false, openB = false;
             for (let i = 0; i < rp.length; i += 3) {
               const x = rp[i], y = rp[i + 1], zv = rp[i + 2];
@@ -468,12 +446,14 @@
           }
           ctx.lineWidth = 1;
           ctx.strokeStyle = '#cfe6ff';
-          if (S.coastDash) ctx.setLineDash(S.coastDash);
-          ctx.globalAlpha = S.coastA; ctx.stroke(pa);
-          ctx.globalAlpha = S.coastB; ctx.stroke(pb);
+          ctx.setLineDash(S.coastDash || []);
+          ctx.globalAlpha = aA; ctx.stroke(pa);
+          ctx.globalAlpha = aB; ctx.stroke(pb);
           ctx.globalAlpha = 1;
           ctx.setLineDash([]);                  // 必须还原：后面的球体轮廓是实线
-        }
+        };
+        shore(coast, S.coastA, S.coastB);
+        shore(inland, S.inlandA, S.inlandB);     // 里海、五大湖等内陆水体：淡一档
 
         /* 球体轮廓 */
         ctx.strokeStyle = 'rgba(255,255,255,.14)';

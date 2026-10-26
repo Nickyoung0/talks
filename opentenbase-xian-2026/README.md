@@ -8,6 +8,14 @@
 2. 或在本目录运行 `python3 -m http.server 8080`，访问 http://localhost:8080；
 3. 按 `H` 查看全部快捷键；按 `O` 打开总览。
 
+## 封面点阵地球（底图是严肃的）
+
+封面右上角是一个 canvas 绘制的点阵地球：测地网格为海，稀疏柔光点为陆，海岸线用虚线（正面亮、边缘暗两档）。**底图数据来自 Natural Earth 1:10m**（经 world-atlas TopoJSON 封装），生成管线在 `tools/gen_land_data.js`：解码多边形 → 分层处理**外环 / 洞（里海）/ 湖面 / 湖中岛**四类环 → Douglas-Peucker 抽稀 → 跨 ±180° 日界线的环整体平移到连续经度区间。
+
+- 判定逻辑单独抽在 `assets/js/land-hit.js`（边级纬度带索引，两万点采样毫秒级），`globe.js` 画图、`tools/verify_geo.js` 核验共用同一份，杜绝"画的和验的不是一套"。
+- **地理核验**：`node tools/verify_geo.js` 跑 100 项断言 —— 中国主要城市与台北/香港/海口、七大洲主要城市、主要湖泊（里海/贝加尔/五大湖等）、台湾/海南球面面积偏差（<±2%）、全球陆海占比、逐 0.5° 纬线扫描防跨日界线连片误判。改任何底图数据后必须重跑。
+- 微调观感改 `assets/js/globe.js` 顶部 `S`：`landSample`（点数）、`landSpread`（光斑大小）、`coastDash`（虚线，`null` 回实线）、`coastA/coastB`（轮廓亮度）。
+
 ## 互动机器页（第 02 章）
 
 把扩展机制画成一台插画风格的电脑主板（浅底网格场景、橄榄绿哑光 PCB、黑色芯片白丝印、金色接插件、细描边柔和投影；六块扩展卡各带主题色铭牌）：主板 = 内核骨架，插槽 = 扩展接口，板卡 = 扩展模块（.so），开机时序 = 代码加载时机，设备清单 = 系统目录。纯 CSS 3D + 原生 JS，无任何外部依赖。
@@ -45,10 +53,15 @@ assets/js/deck.js          演示引擎（原生 JS，无外部依赖）
 assets/js/machine.js       互动机器组件（主板渲染、部件点击、开机时序）
 assets/js/elephant.js      目录页入场动画（大象背行囊走来，工具=扩展）
 assets/js/slides-data.js   由 tools/build_slides_data.py 生成的页面数据
+assets/js/globe.js         封面点阵地球渲染（Fibonacci 采样 + canvas 2D 投影）
+assets/js/land-data.js     底图分层环数据（Natural Earth 1:10m，由 gen_land_data.js 生成）
+assets/js/land-hit.js      海陆判定共享模块（globe 渲染与地理核验共用）
 assets/img/                模版提取的 Logo 与两张内容配图
 assets/files/hello_pg.zip  现场实践源码包（页内可下载）
 tools/build_slides_data.py 数据生成器（顶部 EVENT 为可编辑活动信息）
 tools/content/             备课内容源模块（生成器的输入）
+tools/gen_land_data.js     底图生成器：TopoJSON → 分层环 → 抽稀 → 日界线平移
+tools/verify_geo.js        地理核验：100 项断言（改底图数据后必跑）
 tools/check_deck.cjs       Playwright 自动化验收脚本（可选）：逐条打印 44 项断言
                            `cd tools && node check_deck.cjs`
 tools/shot_machine.cjs     机器页截图脚本（开发用，可选）
@@ -74,4 +87,4 @@ tools/shot_machine.cjs     机器页截图脚本（开发用，可选）
 
 ## 技术口径
 
-内核源码基准：PostgreSQL master `23e7ca78a003`（20devel）；主案例：pgvector v0.8.1（独立源码基准，未声明与 master 编译兼容）。所有演示 SQL 为讲解示例，未在目标环境实跑。
+内核源码基准：PostgreSQL master `23e7ca78a003`（20devel）；主案例：pgvector v0.8.1（独立源码基准，未声明与 master 编译兼容）。所有演示 SQL 为讲解示例，未在目标环境实跑。底图数据：Natural Earth 1:10m land + lakes（public domain，world-atlas 封装），海岸线抽稀误差约 0.05°（≈5km，在 600px 球面上约 0.13px，亚像素）。

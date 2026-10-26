@@ -1,7 +1,8 @@
 /* 封面右上角地球：真实球面自转（canvas 2D，零依赖，file:// 可用）
    画面构成：
-   1) 大陆板块由更小更密的点阵刻出来（陆地点取自 Natural Earth 50m 陆地轮廓判定），
-      并用同一份轮廓描出海岸线，板块边界清晰；
+   1) 大陆板块由「稀疏点阵 + 柔光晕」刻出来（陆地点取自 Natural Earth 50m 陆地轮廓判定），
+      并用同一份轮廓描出海岸线：形状交给海岸线、体量交给光晕，点只是质感，
+      刻意不铺成密集点阵，避免密集恐惧的观者不适；
    2) 海面圆点铺在测地格点上（正二十面体 Class I 细分），沿三个方向各自排成直线，
       同方向的相邻圆点连成一条连续的细虚线，整张网随地球一起转，只画正面可见的段；
    3) 经纬线随自转一起移动，是“球在转”最直接的线索；
@@ -188,8 +189,12 @@
         tilt: -0.34, roll: -0.28,           // 极轴倾斜 + 画面内倾角
         freq: 9,                            // 测地细分密度：格点数 = 10·freq² + 2
         seaR: 1.7, seaAlpha: 0.30,
-        landSample: 100000, landR: 0.95, landAlpha: 1.0,
-        coastA: 0.34, coastB: 0.15,         // 海岸线两档亮度（正面亮 / 边缘暗）
+        /* 陆地刻意做成「稀疏点阵 + 柔光晕」而不是铺满的密集点：
+           点数多了会连成一片、且容易让密集恐惧的观者不适，
+           这里让板块形状由海岸线描边负责，点只是质感，光晕负责体量。 */
+        landSample: 22000, landR: 1.05, landAlpha: 1.0,
+        landHalo: 2.6, landHaloA: 0.085,    // 柔光晕：半径倍数与不透明度
+        coastA: 0.42, coastB: 0.19,         // 海岸线两档亮度（正面亮 / 边缘暗）
         meridians: 10, parallels: 6,
         meshAlpha: [0.09, 0.14, 0.19, 0.25, 0.33],   // 虚线按深度分五档，边缘淡出
         speed: 0.0030,                      // 弧度/帧（16.7ms），约 35 秒转一圈
@@ -209,7 +214,7 @@
       const lonDeg = v => { const d = (Math.atan2(v.z, v.x) * 180) / Math.PI; return d > 180 ? d - 360 : d; };
       const latDeg = v => (Math.asin(clamp(v.y, -1, 1)) * 180) / Math.PI;
 
-      /* 测地格点里落在海上的那些，才是网格的圆点；大陆留给密集点阵 */
+      /* 测地格点里落在海上的那些，才是网格的圆点；大陆留给稀疏点阵 + 光晕 */
       const geo = geodesic(S.freq);
       const sea = [];
       const seaOf = new Int32Array(geo.verts.length).fill(-1);
@@ -252,7 +257,7 @@
       let seaProj = null;                    // 每帧的海点投影缓存（网格与圆点共用）
       let landProj = new Float32Array(0);    // 每帧的陆地点投影缓存
 
-      /* 大陆点阵：判定 10 万个点约零点几秒，放到首帧之后异步做；
+      /* 大陆点阵：判定两万多个点约零点几秒，放到首帧之后异步做；
          手机屏小，密度按宽度降一档，保帧率 */
       const land = [];
       let landReady = false;
@@ -404,17 +409,27 @@
           ctx.beginPath(); ctx.arc(seaProj[3 * i], seaProj[3 * i + 1], S.seaR * (0.5 + 0.6 * z), 0, TAU); ctx.fill();
         }
 
-        /* 陆地：更小更密的点，把大陆板块刻出来（内联投影 + fillRect，几万点也能稳 60fps） */
+        /* 陆地：稀疏点阵 + 柔光晕（内联投影 + fillRect，几万点也能稳 60fps）。
+           第一趟投影并画光晕，第二趟复用缓存画实心点，省一半三角运算。 */
         if (landProj.length !== land.length * 3) landProj = new Float32Array(land.length * 3);
-        ctx.fillStyle = '#eaf4ff';
+        ctx.fillStyle = '#8ec2f2';
         for (let i = 0; i < land.length; i++) {
           const v = land[i];
           const x1 = v.x * cs + v.z * ss, z1 = -v.x * ss + v.z * cs;
           const z = m32 * v.y + m33 * z1;
-          if (z <= 0.02) continue;
+          if (z <= 0.02) { landProj[3 * i + 2] = 0; continue; }
           const X = cx + R * (m11 * x1 + m12 * v.y + m13 * z1);
           const Y = cy + R * (m21 * x1 + m22 * v.y + m23 * z1);
           landProj[3 * i] = X; landProj[3 * i + 1] = Y; landProj[3 * i + 2] = z;
+          const r = S.landR * S.landHalo * (0.6 + 0.5 * z);
+          ctx.globalAlpha = S.landHaloA * Math.pow(z, 0.5);
+          ctx.fillRect(X - r, Y - r, 2 * r, 2 * r);
+        }
+        ctx.fillStyle = '#eaf4ff';
+        for (let i = 0; i < land.length; i++) {
+          const z = landProj[3 * i + 2];
+          if (z <= 0.02) continue;
+          const X = landProj[3 * i], Y = landProj[3 * i + 1];
           const lit = clamp(0.5 + 0.5 * (z * 0.62 - ((X - cx) / R) * 0.26 - ((Y - cy) / R) * 0.30), 0.38, 1);
           ctx.globalAlpha = S.landAlpha * Math.pow(z, 0.65) * (0.62 + 0.38 * lit);
           const r = S.landR * (0.55 + 0.55 * z);

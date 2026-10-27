@@ -766,8 +766,9 @@
   .pcard .board { transition: none; }
 }
 
-/* boot 模式舞台更矮（右侧步骤区更高），主板再缩一档，保证底座完整不裁切 */
-.mach[data-mode="boot"] .mobo[data-view="iso"] { --ms: .72; --oy: -61px; }
+/* boot 模式舞台更矮（右侧步骤区更高）。0.80 是不裁 PCB 与部件标签的上限：8 步逐一实测，
+   顶部标签与底部板角各留约 7px；底座（case-floor）允许被裁。再大板角就出画。 */
+.mach[data-mode="boot"] .mobo[data-view="iso"] { --ms: .80; --oy: -55px; }
 
 /* boot 模式面板压缩：步骤+轨道+部件说明都要放下 */
 .mach[data-mode="boot"] .mp-text {

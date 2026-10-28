@@ -1,0 +1,14 @@
+/* 左侧要点 ↔ 右侧流程图联动（配合 assets/js/sync.js）
+   只做两件事：未讲到的步骤弱一档、正在讲的那一步换描边。
+   不加编号、不换底色、不加色块——全部讲完后与原版画面一致。 */
+.sync-vis svg [data-st] { transition: opacity .45s ease, stroke .35s ease, stroke-width .35s ease; }
+/* 未讲到：比已讲的弱一档，但文字仍然清晰可读（压到 .2 以下在投影上像没渲染完） */
+.sync-vis svg [data-st="todo"] { opacity: .5; }
+.sync-vis svg [data-st="done"],
+.sync-vis svg [data-st="cur"] { opacity: 1; }
+/* 当前焦点：只换描边颜色与粗细 */
+.sync-vis svg rect[data-st="cur"] { stroke: #015cb7; stroke-width: 2px; }
+
+/* 一条要点都没讲时整图不出现；出现时沿用全篇 frag 的入场手法（上移 + 微缩 + 模糊），不引入新动效 */
+.sync-vis { transition: opacity .5s var(--ease), transform .58s var(--ease), filter .45s ease; }
+.sync-vis.sync-hold { opacity: 0; transform: translate3d(0, 26px, 0) scale(.985); filter: blur(3px); }

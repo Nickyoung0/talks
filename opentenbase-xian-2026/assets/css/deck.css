@@ -109,7 +109,7 @@ body {
   from { transform: translate3d(0, 0, 0) scale(1); }
   to   { transform: translate3d(-22px, -14px, 0) scale(1.05); }
 }
-.slide > header, .slide > .s-body, .slide > .agenda-grid, .slide > .p-detail { position: relative; z-index: 1; }
+.slide > header, .slide > .s-body, .slide > .agenda-grid { position: relative; z-index: 1; }
 
 /* 翻页方向性入场（互动机器页保持原样，不参与） */
 .slide.enter-fwd  { animation: pageInFwd  .52s var(--ease-out) both; }
@@ -700,31 +700,10 @@ svg.logic > g > rect:nth-of-type(8), svg.logic > g > text:nth-of-type(8) { anima
 .ov-card .ov-title { font-size: 14.5px; margin-top: 6px; line-height: 1.5; color: #eef5ff; }
 .ov-card .ov-kind { font-size: 11px; color: #8aa8cc; margin-top: 8px; }
 
-/* ---------------- 演讲者视图 ---------------- */
-#presenter {
-  position: fixed; inset: 0; z-index: 90;
-  background: rgba(5, 10, 26, .99); color: #dbe7fa;
-  display: none; grid-template-rows: auto 1fr auto;
-}
-#presenter.open { display: grid; }
-#presenter header { display: flex; align-items: center; gap: 18px; padding: 18px 32px; border-bottom: 1px solid rgba(255, 255, 255, .1); }
-#presenter header h2 { font-size: 17px; color: #fff; }
-#presenter header .p-meta { font-size: 13px; color: #8fadd2; }
-#timer { margin-left: auto; font-family: var(--mono); font-size: 26px; color: #6fd3ff; }
-#timer button { font-size: 12px; margin-left: 6px; }
-.p-body { overflow: auto; padding: 26px 36px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 30px; }
-.p-col h3 { font-size: 13px; letter-spacing: 2px; color: #7fb4ea; margin: 0 0 10px; }
-.p-col .p-text { font-size: 16.5px; line-height: 1.9; }
-.p-col .p-detail { font-size: 14px; line-height: 1.85; color: #b9cbe4; overflow: auto; max-height: 46vh; padding-right: 8px; }
-.p-col .p-detail h3, .p-col .p-detail table { margin: 12px 0; }
-.p-col .p-detail img { max-width: 100%; }
-.p-col .p-detail pre { font-size: 12px; }
-.p-col .p-detail table { font-size: 12.5px; }
-#presenter footer { padding: 12px 32px; border-top: 1px solid rgba(255, 255, 255, .1); font-size: 14.5px; color: #9fc3ea; display: flex; gap: 26px; }
-#presenter footer .next-tip { color: #6fd3ff; }
-#presenter footer button { margin-left: auto; }
-#presenter button { background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .2); color: #e6f0ff; border-radius: 8px; padding: 5px 14px; cursor: pointer; font-size: 13px; }
-#presenter button:hover { background: rgba(255, 255, 255, .2); }
+/* ---------------- 演讲计时（HUD 内） ---------------- */
+#timer { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 14px; color: #7fd3ff; font-variant-numeric: tabular-nums; }
+#timer .read { font-weight: 700; }
+#timer button { font-size: 12px; }
 
 /* ---------------- 页面内演示视频入口（第 31 页） ---------------- */
 .demo-bar {
@@ -814,7 +793,7 @@ body.blank { background: #000; }
 @media print {
   @page { size: 1280px 720px; margin: 0; }
   body { background: #fff; overflow: visible; }
-  #timebar, #hud, #overview, #presenter, #help { display: none !important; }
+  #timebar, #hud, #overview, #help { display: none !important; }
   #stage-wrap { position: static; overflow: visible; }
   #stage-wrap::before { display: none !important; }
   #stage-size { width: 1280px !important; height: 720px !important; margin: 0; }
@@ -1178,12 +1157,11 @@ body.stage-rot #stage-wrap::before {
     radial-gradient(680px 400px at 82% 20%, rgba(122, 92, 255, .14), transparent 64%);
 }
 
-/* 讲稿 / 总览 / 帮助：手机上的滚动体验 */
-#overview, #presenter, #help {
+/* 总览 / 帮助：手机上的滚动体验 */
+#overview, #help {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
-#presenter .p-body { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 
 /* 竖屏引导层：建议横屏，可点“仍要竖屏查看”关闭（本次会话内不再出现） */
 #rotate-hint {
@@ -1238,8 +1216,6 @@ body.portrait-phone.force-portrait #rotate-hint { display: none; }
   /* 触摸设备没有 hover：放大镜提示条改为常显轻提示 */
   .zoomable .zoom-hint { opacity: .92; }
   #overview { padding: 24px 20px; }
-  #presenter .p-body { grid-template-columns: 1fr; }  /* 讲稿双栏在窄屏改单栏 */
-  #presenter .p-text, #presenter .p-detail { font-size: 15px; line-height: 1.85; }  /* 手机可读字号 */
   #help .help-card { font-size: 15px; }
 }
 /* 手机触摸设备：全局禁用双击缩放抖动，保留滑动手势 */
@@ -1299,7 +1275,7 @@ body.portrait-phone.force-portrait #rotate-hint { display: none; }
     background: #fff;                     /* 去掉深色舞台底，省墨且对比清楚 */
   }
   /* 屏幕外壳一律不出纸 */
-  #timebar, #hud, #overview, #presenter, #help,
+  #timebar, #hud, #overview, #help,
   #video-modal, #rotate-hint { display: none !important; }
 
   /* 舞台还原成普通文档流：解除缩放、固定定位与滚动容器 */

@@ -1,7 +1,7 @@
 /* ============================================================
    OpenTenBase 城市行 · 西安站 —— 网页演示引擎（零依赖）
    键盘：→/↓/空格/PgDn 下一步 · ←/↑/PgUp 上一步 · Home/End 首末页
-        F 全屏 · N 演讲者视图 · O 总览 · B 黑屏 · H 帮助 · 数字+回车跳页
+        F 全屏 · O 总览 · B 黑屏 · H 帮助 · 数字+回车跳页
    ============================================================ */
 (() => {
   'use strict';
@@ -10,8 +10,6 @@
   const $ = s => document.querySelector(s);
 
   const EVENT = D.event;
-  // 讲稿开关由构建脚本控制（STRIP_TALK）：关闭时不显示演讲者视图入口
-  const HAS_PRESENTER = !(D.config && D.config.presenter === false);
 
   /* ---------------- 渲染 ---------------- */
   function esc(s) { return s; } // 内容来自可信的备课数据，本身已是 HTML
@@ -573,7 +571,6 @@
     location.hash = String(i + 1);
     $('#hud .pagenum').textContent = `${i + 1} / ${slideEls.length}`;
     updateOverview();
-    if (presenterOpen) renderPresenter();
   }
   function next() {
     // 目录页：演讲者若提前推进，入场动画立即收尾，不等满 3.9s
@@ -609,31 +606,8 @@
     [...ovGrid.children].forEach((c, i) => c.classList.toggle('current', i === idx));
   }
 
-  /* ---------------- 演讲者视图 ---------------- */
-  let presenterOpen = false, timerSec = 0, timerOn = false, timerInt = null;
-  const pBody = $('#presenter');
-  // 讲稿已移除时（tools/build_slides_data.py 的 STRIP_TALK）：隐藏入口与快捷键
-  if (!HAS_PRESENTER) {
-    const pb = $('#hud .pres');
-    if (pb) pb.style.display = 'none';
-    const hrow = [...document.querySelectorAll('#help tr')]
-      .find(tr => /演讲者视图/.test(tr.textContent || ''));
-    if (hrow) hrow.remove();
-  }
-  function renderPresenter() {
-    const s = D.slides[idx] || { title: '附录备查' };
-    $('#presenter header h2').textContent = (s.title || '').replace(/<[^>]+>/g, '') || '（无标题）';
-    $('#presenter .p-meta').textContent = `${s.chapter || ''} · 第 ${idx + 1} / ${slideEls.length} 页 · 建议时长 ${s.time || '—'}`;
-    $('#presenter .p-text').innerHTML = (s.talk || '（本页无讲稿）');
-    $('#presenter .p-detail').innerHTML = s.body || (D.appendices[idx - D.slides.length] || {}).body || '（无技术展开）';
-    $('#presenter footer .next-tip').textContent = s.transition ? `下一页衔接：${s.transition.replace(/<[^>]+>/g, '')}` : '';
-    $('#presenter footer .design-tip').textContent = s.design ? `制作提示：${s.design}` : '';
-  }
-  function togglePresenter(force) {
-    presenterOpen = force !== undefined ? force : !presenterOpen;
-    pBody.classList.toggle('open', presenterOpen);
-    if (presenterOpen) renderPresenter();
-  }
+  /* ---------------- 演讲计时 ---------------- */
+  let timerSec = 0, timerOn = false, timerInt = null;
   function fmt(sec) { return `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`; }
   function tickTimer() { timerSec++; $('#timer .read').textContent = fmt(timerSec); }
   $('#timer .toggle').addEventListener('click', () => {
@@ -707,14 +681,12 @@
       case 'Home': show(0, true); break;
       case 'End': show(slideEls.length - 1, true); break;
       case 'f': case 'F': document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); break;
-      case 'n': case 'N': if (HAS_PRESENTER) togglePresenter(); break;
       case 'o': case 'O': ov.classList.toggle('open'); updateOverview(); break;
       case 'b': case 'B': document.body.classList.toggle('blank'); break;
       case 'r': case 'R': setRot(!rot); break;
       case 'h': case 'H': case '?': help.classList.toggle('open'); break;
       case 'Escape':
         help.classList.remove('open'); ov.classList.remove('open');
-        if (presenterOpen) togglePresenter(false);
         break;
       default: break;
     }
@@ -767,9 +739,7 @@
   $('#hud .prev').addEventListener('click', prev);
   $('#hud .next').addEventListener('click', next);
   $('#hud .ov').addEventListener('click', () => { ov.classList.toggle('open'); updateOverview(); });
-  $('#hud .pres').addEventListener('click', () => togglePresenter());
   $('#hud .fs').addEventListener('click', () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen());
-  $('#presenter .close').addEventListener('click', () => togglePresenter(false));
 
   addEventListener('hashchange', () => {
     const n = parseInt(location.hash.slice(1), 10);

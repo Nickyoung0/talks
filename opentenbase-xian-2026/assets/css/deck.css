@@ -1001,7 +1001,7 @@ body.blank { background: #000; }
 }
 /* 右上点阵地球：两层点阵反向慢转，mask 出球形渐隐 */
 .cvo-globe {
-  position: absolute; top: -320px; right: -200px; width: 760px; height: 760px;
+  position: absolute; top: -240px; right: -200px; width: 760px; height: 760px;
   pointer-events: none;
 }
 /* 地球由 globe.js 用 canvas 绘制：球面点阵自转，逐帧重投影 */
@@ -1033,30 +1033,31 @@ body.blank { background: #000; }
    改这里的 padding-top / 标题字号 / 地球位置后，必须跑 verify_territory.cjs。 */
 .cvo-main {
   position: relative; z-index: 1; flex: 1;
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  padding-top: 190px; padding-bottom: 0;
+  display: flex; flex-flow: row wrap; align-items: flex-start; align-content: flex-start; justify-content: center;
+  padding-top: 332px; padding-bottom: 0;
 }
 .cvo-title {
   font-family: "Microsoft YaHei", "微软雅黑", "PingFang SC", "Noto Sans SC", sans-serif;
   font-size: 72px;                    /* 微软雅黑 54 号：舞台 1280px = 幻灯片 960pt，1pt = 4/3px */
   font-weight: 700; color: #fff;
-  text-align: center; line-height: 1.42;
+  text-align: center; line-height: 1.42; width: 100%;
   max-width: 1010px; letter-spacing: 1px;
   word-break: keep-all;               /* 中文词不拆行：会场电脑换成雅黑等字体时也不会出现“的设 / 计哲学” */
   text-shadow: 0 5px 28px rgba(3, 14, 82, .5);
 }
-.cvo-dots { display: flex; gap: 11px; margin: 26px 0 22px; }
+.cvo-dots { display: flex; gap: 11px; margin: 16px 0 18px; width: 100%; justify-content: center; }
 .cvo-dots i {
   width: 13px; height: 13px; border-radius: 3px; background: #fff;
   box-shadow: 0 0 10px rgba(255, 255, 255, .5);
 }
 .cvo-dots i:first-child { background: transparent; border: 1.6px solid rgba(255, 255, 255, .92); box-shadow: none; }
 .cvo-date {
+  align-self: center;
   font-size: 21.3px;                  /* PPT 16 号 */
   font-weight: 500; letter-spacing: 2.5px; color: rgba(255, 255, 255, .96);
 }
 .cvo-speaker {
-  margin-top: 36px; display: inline-flex; align-items: stretch;
+  margin-top: 0; margin-left: 22px; display: inline-flex; align-items: stretch;
   background: #fff; border-radius: 10px; padding: 5px;
   box-shadow: 0 16px 38px -16px rgba(2, 10, 64, .7);
 }

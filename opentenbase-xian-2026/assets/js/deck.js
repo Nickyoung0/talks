@@ -741,6 +741,32 @@
   $('#hud .ov').addEventListener('click', () => { ov.classList.toggle('open'); updateOverview(); });
   $('#hud .fs').addEventListener('click', () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen());
 
+  /* ---------------- HUD 收起 / 展开 ----------------
+     默认展开；点把手收到右侧边缘只露把手；鼠标回到右下角感应区自动展开。
+     刚点收起时鼠标还在感应区里，用 holdCollapsed 压住，等指针离开过一次再放开。 */
+  const hudEl = $('#hud'), hudZone = $('#hud-zone'), gripEl = hudEl && hudEl.querySelector('.grip');
+  let hudCollapsed = false, holdCollapsed = false;
+  function setHudCollapsed(v) {
+    hudCollapsed = !!v;
+    if (!hudEl) return;
+    hudEl.classList.toggle('hud-collapsed', hudCollapsed);
+    if (gripEl) {
+      gripEl.textContent = hudCollapsed ? '‹' : '›';
+      gripEl.title = hudCollapsed ? '展开控制条' : '收起控制条（贴到右侧边缘）';
+      gripEl.setAttribute('aria-expanded', String(!hudCollapsed));
+    }
+  }
+  if (gripEl) {
+    gripEl.addEventListener('click', () => {
+      setHudCollapsed(!hudCollapsed);
+      holdCollapsed = hudCollapsed;   // 收起：压住悬停；展开：放开
+    });
+  }
+  if (hudZone) {
+    hudZone.addEventListener('pointerenter', () => { if (hudCollapsed && !holdCollapsed) setHudCollapsed(false); });
+    hudZone.addEventListener('pointerleave', () => { holdCollapsed = false; });
+  }
+
   addEventListener('hashchange', () => {
     const n = parseInt(location.hash.slice(1), 10);
     if (n >= 1 && n <= slideEls.length && n - 1 !== idx) show(n - 1, true);

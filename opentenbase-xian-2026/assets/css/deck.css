@@ -667,8 +667,18 @@ svg.logic > g > rect:nth-of-type(8), svg.logic > g > text:nth-of-type(8) { anima
   background: linear-gradient(180deg, rgba(20, 34, 66, .82), rgba(9, 16, 38, .88));
   border: 1px solid rgba(120, 190, 255, .22);
   box-shadow: 0 14px 34px -14px rgba(0, 0, 0, .85), inset 0 1px 0 rgba(255, 255, 255, .10);
-  padding: 8px 14px; border-radius: 999px; backdrop-filter: blur(10px);
+  padding: 8px 14px 8px 8px; border-radius: 999px; backdrop-filter: blur(10px);
+  transition: transform .3s cubic-bezier(.32, .72, .28, 1), opacity .4s;
 }
+/* 控制条可收起：默认展开；点把手收起到右侧边缘只露把手，鼠标回到右下角自动展开 */
+#hud.hud-collapsed { transform: translateX(calc(100% - 18px)); }
+#hud .grip {
+  flex: 0 0 auto; width: 26px; height: 23px; padding: 0; line-height: 1;
+  font-size: 15px; font-weight: 700; color: #9fd6ff;
+}
+#hud-zone { position: fixed; right: 0; bottom: 0; width: 84px; height: 104px; z-index: 69; }
+/* 触摸设备没有悬停：感应区去掉，改由点击把手切换 */
+@media (hover: none) and (pointer: coarse) { #hud-zone { display: none; } }
 #hud .pagenum { font-variant-numeric: tabular-nums; font-weight: 700; color: #7fd3ff; }
 #hud button {
   background: rgba(255, 255, 255, .05); border: 1px solid rgba(140, 200, 255, .28); color: #e6f0ff;
@@ -793,7 +803,7 @@ body.blank { background: #000; }
 @media print {
   @page { size: 1280px 720px; margin: 0; }
   body { background: #fff; overflow: visible; }
-  #timebar, #hud, #overview, #help { display: none !important; }
+  #timebar, #hud, #hud-zone, #overview, #help { display: none !important; }
   #stage-wrap { position: static; overflow: visible; }
   #stage-wrap::before { display: none !important; }
   #stage-size { width: 1280px !important; height: 720px !important; margin: 0; }
@@ -1275,7 +1285,7 @@ body.portrait-phone.force-portrait #rotate-hint { display: none; }
     background: #fff;                     /* 去掉深色舞台底，省墨且对比清楚 */
   }
   /* 屏幕外壳一律不出纸 */
-  #timebar, #hud, #overview, #help,
+  #timebar, #hud, #hud-zone, #overview, #help,
   #video-modal, #rotate-hint { display: none !important; }
 
   /* 舞台还原成普通文档流：解除缩放、固定定位与滚动容器 */

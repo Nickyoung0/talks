@@ -61,14 +61,14 @@
         const j = i + 1 === n ? 0 : i + 1;
         const x1 = f[2 * i], x2 = f[2 * j];
         const dx = wrap(x2 - x1);
-        const packed = (ri << 20) | i;
+        const packed = ri * 1e6 + i;        // 环数可能超过 2048，(ri<<20)|i 会溢出成负数，改用十进制打包
         /* 边的两个端点所在的整经度槽都要登记：绝大多数边短于 1°，
            若写成 ceil→floor 的循环，这种边一格都不会登记，会被整条漏掉。 */
         const a = Math.floor(Math.min(x1, x1 + dx)), b = Math.floor(Math.max(x1, x1 + dx));
         for (let x = a; x <= b; x++) idx[slot(x)].push(packed);
       }
     });
-    for (let s = 0; s < NLON; s++) idx[s] = Int32Array.from(idx[s]);
+    for (let s = 0; s < NLON; s++) idx[s] = Float64Array.from(idx[s]);
     return { rings, idx };
   }
 
@@ -81,7 +81,7 @@
        索引里的边是按 (环,边) 顺序压进去的，同一环的边天然相邻，顺序扫一遍即可。 */
     for (let k = 0; k < list.length; k++) {
       const packed = list[k];
-      const r = packed >> 20, i = packed & 0xFFFFF;
+      const r = Math.floor(packed / 1e6), i = packed - r * 1e6;
       if (r !== ri) {
         if (ri >= 0 && (cnt & 1)) return true;
         ri = r; cnt = 0;

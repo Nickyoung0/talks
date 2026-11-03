@@ -477,7 +477,11 @@
   }
   addEventListener('resize', () => fit(true));
   // 进出全屏瞬间重算：全屏用系数 1（精确铺满），退出回 0.985
-  document.addEventListener('fullscreenchange', () => fit(false));
+  document.addEventListener('fullscreenchange', () => {
+    // 全屏铺满时画布贴边：去掉圆角与外发光（浅色页四角会露出背景色，看着像缺角）
+    document.body.classList.toggle('is-fs', !!document.fullscreenElement);
+    fit(false);
+  });
   addEventListener('orientationchange', () => setTimeout(() => {
     // 手机已真正转成横屏时，回到常规横屏视图（除非用户开着旋转锁定）
     if (rot && innerWidth > innerHeight) setRot(false);

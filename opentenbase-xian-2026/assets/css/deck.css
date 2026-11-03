@@ -74,6 +74,8 @@ body {
   border-radius: 8px;
   overflow: hidden;
 }
+/* 全屏铺满视口时贴边：圆角会让浅色页四角露出背景色（深色页则看不出，观感忽直忽圆），外发光也失去意义 */
+body.is-fs #stage { border-radius: 0; box-shadow: none; }
 .slide {
   position: absolute; inset: 0;
   opacity: 0; visibility: hidden;

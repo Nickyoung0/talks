@@ -743,7 +743,14 @@
   $('#hud .prev').addEventListener('click', prev);
   $('#hud .next').addEventListener('click', next);
   $('#hud .ov').addEventListener('click', () => { ov.classList.toggle('open'); updateOverview(); });
-  $('#hud .fs').addEventListener('click', () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen());
+  /* 全屏：iOS Safari（iPhone）不支持脚本触发全屏——按钮直接隐藏，避免点了没反应；
+     iPad Safari 与 Android Chrome 正常可用，行为不变。 */
+  const fsBtn = $('#hud .fs');
+  if (fsBtn && !(document.fullscreenEnabled || document.documentElement.requestFullscreen)) {
+    fsBtn.style.display = 'none';
+  } else if (fsBtn) {
+    fsBtn.addEventListener('click', () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen());
+  }
 
   /* ---------------- HUD 收起 / 展开 ----------------
      默认展开；点把手收到右侧边缘只露把手；鼠标回到右下角感应区自动展开。

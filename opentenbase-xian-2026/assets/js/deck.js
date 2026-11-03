@@ -412,7 +412,8 @@
 
   /* ---------------- 缩放 ---------------- */
   /* 触摸设备额外提供：整页 / 铺满宽度 两种视图，以及双指与按钮缩放。
-     桌面与投影场景行为与之前完全一致（整页等比缩放 0.985）。 */
+     桌面窗口模式等比缩放并留 0.985 呼吸边；全屏时系数取 1，精确铺满——
+     16:9 屏与 PPT 全屏一致，非 16:9 屏铺满受限方向、另一向留等比黑边（等比缩放的必然结果）。 */
   const COARSE = matchMedia('(hover: none) and (pointer: coarse)').matches;
   const wrapEl = document.getElementById('stage-wrap');
   let vmode = 'fit';          // 'fit' 整页等比 | 'fill' 铺满宽度（纵向可滚动）
@@ -428,7 +429,8 @@
     const { w, h } = vvSize();
     const bw = rot ? H : W, bh = rot ? W : H;   // 旋转后画布局部外接框互换
     if (vmode === 'fill') return w / bw;        // 按宽度铺满，纵向滚动查看
-    return Math.min(w / bw, h / bh) * 0.985;
+    const f = document.fullscreenElement ? 1 : 0.985;
+    return Math.min(w / bw, h / bh) * f;
   }
   function applyScale(anchor) {
     const prev = curS;
@@ -474,6 +476,8 @@
     if (btn) btn.textContent = vmode === 'fit' ? '整页' : '铺满';
   }
   addEventListener('resize', () => fit(true));
+  // 进出全屏瞬间重算：全屏用系数 1（精确铺满），退出回 0.985
+  document.addEventListener('fullscreenchange', () => fit(false));
   addEventListener('orientationchange', () => setTimeout(() => {
     // 手机已真正转成横屏时，回到常规横屏视图（除非用户开着旋转锁定）
     if (rot && innerWidth > innerHeight) setRot(false);

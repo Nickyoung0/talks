@@ -144,8 +144,8 @@
         <span class="kicker">${esc(s.chapter)}</span>
         <h2 class="s-title">${esc(s.title)}</h2>
         ${s.thesis ? `<p class="s-thesis">${esc(s.thesis)}</p>` : ''}
+        ${s.title_en ? `<p class="s-thesis s-title-en">${s.title_en}</p>` : ''}
       </header>
-      ${s.title_en ? `<p class="s-title-en">${s.title_en}</p>` : ''}
       <div class="s-body ${s.visual ? '' : 'no-visual'}">
         <div class="s-screen">${s.screen}</div>${vis}
       </div>${s.extra || ''}` + brandHTML() + footHTML(s.no);

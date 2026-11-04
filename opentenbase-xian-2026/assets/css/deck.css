@@ -139,8 +139,14 @@ h2.s-title {
   font-weight: 700; margin-top: 14px; letter-spacing: .5px;
 }
 .s-thesis { margin-top: 12px; font-size: 18px; color: var(--muted); line-height: 1.6; }
-/* 标题下的英文原文对照（如第 5 页 PostgreSQL 官网 tagline），层级低于标题、不占论点竖条样式 */
-.s-title-en { margin-top: 8px; font-size: 18px; line-height: 1.5; color: var(--blue); font-weight: 600; letter-spacing: .2px; }
+/* 标题下的英文原文对照（如第 5 页 PostgreSQL 官网 tagline）：放在页头渐变 hairline（header::after）
+   的下方，即「标题 → 蓝线 → 英文原文」的层级；不占 header 内论点竖条样式 */
+.slide > .s-title-en {
+  margin-top: 26px;                 /* hairline 在 header 底 15~17px，26px 起保证整行落在蓝线下方 */
+  font-size: 18px; line-height: 1.5; color: var(--blue); font-weight: 600; letter-spacing: .2px;
+  position: relative; z-index: 1;   /* 与 header / s-body 同层，盖住 .slide::after 网格装饰 */
+}
+.slide > .s-title-en + .s-body { margin-top: 18px; }   /* 英文行替代 header 承担与正文的间距，避免整体下移过多 */
 
 /* 页头入场：徽章 → 标题 → 主旨，三段递进 */
 .slide.active:not(.machine) .kicker   { animation: fadeUp .5s var(--ease-out) both; }

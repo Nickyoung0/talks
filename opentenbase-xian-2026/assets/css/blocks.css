@@ -52,22 +52,32 @@
 .fr-slot .fr-slot-hl { fill: rgba(255, 255, 255, .85); stroke: none; }
 .fr-slot text { font-size: 12.5px; font-weight: 600; fill: #1c4f86; }
 
-/* 地基/框架在换建筑时闪一下，强调"这两层没动" */
+/* 地基/框架在换建筑时闪一下，强调"这两层没动"
+   改用 SVG 描边属性动画（stroke / stroke-width），不用 CSS filter：
+   WebKit(Safari) 对 SVG 图形元素上 filter: none → drop-shadow() 的插值支持
+   不一致，脉冲高亮的时序和强度会与 Chrome 对不上。描边是 SVG 呈现属性，
+   两引擎动画一致；0%/100% 精确回到各自原本的描边色与线宽。 */
 .bl-frame.pulse .fr-beam, .bl-frame.pulse .fr-btop,
 .bl-found.pulse .fd-body, .bl-found.pulse .fd-top { animation: blPulse .7s var(--ease); }
+.fr-beam { --bl-stroke: rgba(1, 92, 183, .35); --bl-sw: 1px; }
+.fr-btop { --bl-stroke: rgba(1, 92, 183, .28); --bl-sw: .8px; }
+.fd-body { --bl-stroke: rgba(1, 92, 183, .35); --bl-sw: 1.4px; }
+.fd-top  { --bl-stroke: rgba(1, 92, 183, .30); --bl-sw: 1.2px; }
 @keyframes blPulse {
-  0%   { filter: none; }
-  35%  { filter: drop-shadow(0 0 8px rgba(53, 198, 255, .85)); }
-  100% { filter: none; }
+  0%, 100% { stroke: var(--bl-stroke); stroke-width: var(--bl-sw); }
+  35%      { stroke: rgba(53, 198, 255, .95); stroke-width: calc(var(--bl-sw) + 1.8px); }
 }
 
-/* ---------------- 积木（立体：顶面 + 右侧面 + 正面 + 颗粒） ---------------- */
+/* ---------------- 积木（立体：顶面 + 右侧面 + 正面 + 颗粒） ----------------
+   面色由 blocks.js 预计算写入 --c-top/--c-side/--c-stud/--c-sstud：
+   不用 CSS filter: brightness()（WebKit 对 SVG 图形元素上的 CSS filter 支持不可靠，
+   明暗会丢失导致立体感消失），直接 fill 实色，跨引擎一致。 */
 .blk { cursor: default; }
 .blk .b-body { fill: rgb(var(--c)); stroke: rgba(0, 0, 0, .20); stroke-width: .8; }
-.blk .b-top { fill: rgb(var(--c)); filter: brightness(1.30); stroke: rgba(255, 255, 255, .38); stroke-width: .6; }
-.blk .b-side { fill: rgb(var(--c)); filter: brightness(.62); stroke: rgba(0, 0, 0, .24); stroke-width: .6; }
-.blk .b-stud { fill: rgb(var(--c)); filter: brightness(1.36); stroke: rgba(0, 0, 0, .18); stroke-width: .6; }
-.blk .b-sstud { fill: rgb(var(--c)); filter: brightness(.78); stroke: rgba(0, 0, 0, .10); stroke-width: .5; }
+.blk .b-top { fill: rgb(var(--c-top)); stroke: rgba(255, 255, 255, .38); stroke-width: .6; }
+.blk .b-side { fill: rgb(var(--c-side)); stroke: rgba(0, 0, 0, .24); stroke-width: .6; }
+.blk .b-stud { fill: rgb(var(--c-stud)); stroke: rgba(0, 0, 0, .18); stroke-width: .6; }
+.blk .b-sstud { fill: rgb(var(--c-sstud)); stroke: rgba(0, 0, 0, .10); stroke-width: .5; }
 .blk .b-shine { fill: rgba(255, 255, 255, .32); }
 .blk .b-foot { fill: rgba(0, 0, 0, .24); }
 .blk .b-t { font-size: 13px; font-weight: 700; fill: #fff; letter-spacing: .3px; }
@@ -77,10 +87,10 @@
 /* 虚线空块：留给听众的那一块 */
 .blk.k-ghost .b-body { fill: rgba(255, 255, 255, .35); stroke: rgba(1, 92, 183, .55); stroke-dasharray: 5 4; }
 .blk.k-ghost .b-top, .blk.k-ghost .b-side {
-  fill: rgba(255, 255, 255, .42); filter: none;
+  fill: rgba(255, 255, 255, .42);
   stroke: rgba(1, 92, 183, .5); stroke-dasharray: 5 4;
 }
-.blk.k-ghost .b-stud, .blk.k-ghost .b-sstud { fill: rgba(1, 92, 183, .18); filter: none; stroke: rgba(1, 92, 183, .40); }
+.blk.k-ghost .b-stud, .blk.k-ghost .b-sstud { fill: rgba(1, 92, 183, .18); stroke: rgba(1, 92, 183, .40); }
 .blk.k-ghost .b-t { fill: #1c4f86; }
 .blk.k-ghost .b-shine { fill: rgba(255, 255, 255, .5); }
 .blk.k-ghost .b-foot { fill: rgba(1, 92, 183, .10); }

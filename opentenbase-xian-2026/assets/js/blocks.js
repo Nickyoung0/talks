@@ -105,12 +105,17 @@ window.BlocksLab = (() => {
     const y = G.base - G.bh - b.r * (G.bh + G.gap);
     const k = kinds[b.k] || {};
     const rgb = k.rgb || '126, 156, 187';
+    /* 面色预计算：替代 CSS filter: brightness()。WebKit(Safari) 对 SVG 图形元素上的
+       CSS filter 函数支持不可靠，会导致顶/侧面明暗丢失、立体感消失；这里直接算好
+       各面实色（与 brightness 的分量线性乘一致），跨引擎渲染一致。 */
+    const rgbMul = (src, f) => src.split(',').map(v => Math.min(255, Math.round(v.trim() * f))).join(', ');
+    const rgbTop = rgbMul(rgb, 1.30), rgbSide = rgbMul(rgb, .62), rgbStud = rgbMul(rgb, 1.36), rgbSstud = rgbMul(rgb, .78);
     const kindName = k.name || '';
     const bw = G.bw, bh = G.bh, dx = D.x, dy = D.y;
     /* 顶部凸起：先画暗色柱身，再盖亮色顶面，形成圆柱颗粒 */
     const stud = cx => `<ellipse class="b-sstud" cx="${cx}" cy="${dy * 0.5 + 3.2}" rx="11" ry="5"/>
           <ellipse class="b-stud" cx="${cx}" cy="${dy * 0.5}" rx="11" ry="5"/>`;
-    return `<g class="blk k-${b.k}" data-kind="${esc(kindName)}" transform="translate(${x},${y})" style="--c:${rgb}">
+    return `<g class="blk k-${b.k}" data-kind="${esc(kindName)}" transform="translate(${x},${y})" style="--c:${rgb}; --c-top:${rgbTop}; --c-side:${rgbSide}; --c-stud:${rgbStud}; --c-sstud:${rgbSstud}">
         <g class="blk-in" style="animation-delay:${n * 85}ms">
           <polygon class="b-side" points="${bw},0 ${bw + dx},${dy} ${bw + dx},${bh + dy} ${bw},${bh}"/>
           <polygon class="b-top" points="0,0 ${dx},${dy} ${bw + dx},${dy} ${bw},0"/>

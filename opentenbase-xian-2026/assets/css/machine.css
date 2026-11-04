@@ -22,17 +22,22 @@
 
 /* ---------------- 左：舞台 ---------------- */
 .mach-stage { flex: 1 1 58%; min-width: 0; position: relative; display: flex; flex-direction: column; }
-.mach-scene {
+/* 裁剪层与透视层分离：WebKit(Safari) 中带 perspective 的容器若自身 overflow:hidden，
+   会把 preserve-3d 子树拍平（立起的板卡全部倒伏）。裁剪/圆角/背景放外层 .mach-clip，
+   透视层 .mach-scene 只留 perspective，保持 overflow 可见。 */
+.mach-clip {
   flex: 1; min-height: 0; position: relative;
-  display: grid; place-items: center;
-  perspective: 1600px; perspective-origin: 50% 44%;
+  overflow: hidden; border-radius: 16px; border: 1px solid var(--line);
   background:
     linear-gradient(rgba(118, 148, 104, .1) 1px, transparent 1px),
     linear-gradient(90deg, rgba(118, 148, 104, .1) 1px, transparent 1px),
     linear-gradient(180deg, #f7f8f4 0%, #eef1e8 100%);
   background-size: 22px 22px, 22px 22px, 100% 100%;
-  border: 1px solid var(--line); border-radius: 16px;
-  overflow: hidden;
+}
+.mach-scene {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  perspective: 1600px; perspective-origin: 50% 44%;
 }
 
 .mobo {
@@ -241,11 +246,22 @@
   box-shadow: inset 0 0 0 1.5px rgba(226, 236, 204, .28), 0 5px 12px rgba(38, 48, 24, .4);
   transition: filter .45s ease, box-shadow .45s ease, opacity .45s ease;
 }
+/* off 态压暗：不用 CSS filter（WebKit 会把 3D 子树内带 filter 的元素拍平/渲染异常），
+   改用半透明灰罩 + 透明度，观感接近灰化且跨引擎一致 */
 .part[data-state="off"] .body, .pcard[data-state="off"] .slot {
-  filter: grayscale(.8) brightness(.72); opacity: .68;
+  opacity: .68;
 }
 .part[data-state="off"] .riser, .part[data-state="off"] .cmos,
-.part[data-state="off"] .stick { filter: grayscale(.8) brightness(.72); opacity: .45; }
+.part[data-state="off"] .stick { opacity: .45; }
+.part[data-state="off"] .body::after, .pcard[data-state="off"] .slot::after,
+.part[data-state="off"] .riser::after, .part[data-state="off"] .stick::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: rgba(84, 94, 74, .5); pointer-events: none;
+}
+.part[data-state="off"] .cmos::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: rgba(84, 94, 74, .5); pointer-events: none;
+}
 .part[data-state="off"] .fan .blades { animation-play-state: paused; }
 .part[data-state="on"] .body, .part[data-state="on"] .chip {
   box-shadow: inset 0 0 0 1.5px rgba(230, 240, 210, .4), 0 7px 15px rgba(38, 48, 24, .38);
@@ -753,8 +769,13 @@
 
 /* ---------------- 打印 / 导出 PDF ---------------- */
 @media print {
-  .mach-scene { background: #fff; }
-  .part[data-state="off"] .body, .pcard[data-state="off"] .slot { filter: none; opacity: 1; }
+  .mach-clip { background: #fff; }
+  .part[data-state="off"] .body, .pcard[data-state="off"] .slot,
+  .part[data-state="off"] .riser, .part[data-state="off"] .cmos,
+  .part[data-state="off"] .stick { opacity: 1; }
+  .part[data-state="off"] .body::after, .pcard[data-state="off"] .slot::after,
+  .part[data-state="off"] .riser::after, .part[data-state="off"] .stick::before,
+  .part[data-state="off"] .cmos::before { content: none; }
   .pcard[data-plug="out"][data-bus]:not([data-bus="free"]) .board { opacity: 1; transform: rotateX(90deg) translateY(0); }
   .mp-points { max-height: none; overflow: visible; }
 }

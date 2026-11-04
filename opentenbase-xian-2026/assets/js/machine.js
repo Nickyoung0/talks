@@ -208,11 +208,13 @@ window.MachineLab = (() => {
   function boardHTML() {
     return `<div class="mach">
       <div class="mach-stage">
-        <div class="mach-scene">
-          <div class="mobo" data-view="iso">
-            <div class="case-floor"><i class="standoff s1"></i><i class="standoff s2"></i>
-              <i class="standoff s3"></i><i class="standoff s4"></i></div>
-            <div class="pcb">${garnishHTML()}</div>
+        <div class="mach-clip">
+          <div class="mach-scene">
+            <div class="mobo" data-view="iso">
+              <div class="case-floor"><i class="standoff s1"></i><i class="standoff s2"></i>
+                <i class="standoff s3"></i><i class="standoff s4"></i></div>
+              <div class="pcb">${garnishHTML()}</div>
+            </div>
           </div>
         </div>
         <div class="mach-tools">

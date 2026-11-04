@@ -143,6 +143,7 @@
     return `<header>
         <span class="kicker">${esc(s.chapter)}</span>
         <h2 class="s-title">${esc(s.title)}</h2>
+        ${s.title_en ? `<p class="s-title-en">${s.title_en}</p>` : ''}
         ${s.thesis ? `<p class="s-thesis">${esc(s.thesis)}</p>` : ''}
       </header>
       <div class="s-body ${s.visual ? '' : 'no-visual'}">
